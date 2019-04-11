@@ -19,6 +19,6 @@ Line width and representative areas seem like intuitive ways to relate this info
 Example delineations or simulated patches near the MMU area would be used to illustrate the smallest resolvable unit in the AOI. This could be overlaid on local imagery or a set of relatable objects such as football field (~ 1.3 ac.), city block (~ 6 ac.), section (640 ac.), etc..
 
 
-![](example-CA654.png)
-Here is an example from CA654 (1:24k, published 1966). The ~70 ac. delineation used here is symbolized with a 24m (~ 80 ft.) wide band. A randomly located point is buffered to symbolize a practical MMU of ~ 7 ac (middle of the MMU range for order 3 mapping).
+![](example-CA654.jpg)
+Here is an example from CA654 (1:24k, published 1966). The 70 ac. delineation used here is symbolized with a 24m (80 ft.) wide band. A randomly located point is buffered to symbolize a practical MMU of 7 ac. (middle of the MMU range for order 3 mapping).
 
