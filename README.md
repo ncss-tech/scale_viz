@@ -22,3 +22,9 @@ Example delineations or simulated patches near the MMU area would be used to ill
 ![](example-CA654.jpg)
 Here is an example from CA654 (1:24k, published 1966). The 70 ac. delineation used here is symbolized with a 24m (80 ft.) wide band. A randomly located point is buffered to symbolize a practical MMU of 7 ac. (middle of the MMU range for order 3 mapping).
 
+
+## Geomorphons as Context
+
+![](geomorphons/CA792-comparison.png)
+
+
