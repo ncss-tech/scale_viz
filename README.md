@@ -23,6 +23,16 @@ Example delineations or simulated patches near the MMU area would be used to ill
 Here is an example from CA654 (1:24k, published 1966). The 70 ac. delineation used here is symbolized with a 24m (80 ft.) wide band. A randomly located point is buffered to symbolize a practical MMU of 7 ac. (middle of the MMU range for order 3 mapping).
 
 
+## Three Survey Areas in CA
+
+   * CA630: order 3
+   * CA792: order 3/4
+   * CA790: order 4
+   
+   
+![](SSA-comparison.png)
+
+
 ## Geomorphons as Context
 Consider landforms elements (raster base map) as delineated by the [geomorphons](https://grass.osgeo.org/grass77/manuals/r.geomorphon.html) algorithm, from Sequoia National Park, CA. White lines are the map unit polygons from an order 3/4 soil survey.
 
