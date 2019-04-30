@@ -46,3 +46,12 @@ In general, the landform elements are 1-2 orders of magnitude more detailed than
 ![](geomorphons/CA792-comparison.png)
 
 
+## MU Complexity Evaluation via Fractal Dimension
+
+http://www.umass.edu/landeco/research/fragstats/documents/Metrics/Shape%20Metrics/Metrics/P9%20-%20FRAC.htm
+
+
+![](SSA-complexity/FD-summary.png)
+
+
+
