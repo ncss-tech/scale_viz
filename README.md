@@ -11,7 +11,7 @@ Survey order is very useful tool for constraining field investigations, MU devel
 |-----:|------------:|----------:|-----------:|--------------------:|------------:|-------------:|------------:|-------------:|----------------:|
 |     2|        12000|        1.5|          10|                   40|            7|            45|            1|             5|              150|
 |     3|        24000|        4.0|          40|                   80|           18|           180|            2|            20|              280|
-|     4|        65000|       40.0|          60|                  215|          180|          2790|           20|           310|              450|
+|     4|        65000|       40.0|          600|                  215|          180|          2790|           20|           310|              450|
 
 
 Line width and representative areas seem like intuitive ways to relate this information. For example, as the users zooms well-beyond the 1/2 SSA scale limit in WWW, the lines could be converted into bands that are 40' wide for order 2 mapping, 80' wide for order 3, and ~ 200' wide for order 4.
