@@ -33,6 +33,15 @@ Here is an example from CA654 (1:24k, published 1966). The 70 ac. delineation us
 ![](SSA-comparison.png)
 
 
+## Representative Map Units
+Summaries of delineation area and fractal dimension for four map units representing different survey orders and complexity.
+
+![](mu-spatial-summary-area.png)
+
+![](mu-spatial-summary-fd.png)
+
+TODO: exemplars of 5th - 50th - 95th percentiles of fractal dimension would be an excellent exhibit for the Soil Survey Manual.
+
 ## Geomorphons as Context
 Consider landforms elements (raster base map) as delineated by the [geomorphons](https://grass.osgeo.org/grass77/manuals/r.geomorphon.html) algorithm, from Sequoia National Park, CA. White lines are the map unit polygons from an order 3/4 soil survey.
 
