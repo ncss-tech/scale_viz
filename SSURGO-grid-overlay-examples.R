@@ -3,6 +3,11 @@ library(sp)
 library(sf)
 library(mapview)
 
+# new interface to leaflet 
+# https://github.com/r-spatial/leafem
+library(leafem)
+
+
 ## TODO
 # sf methods are strange...
 # make a shiny app that can generate nested grids at a given point and overlay on SSURGO data
@@ -34,8 +39,8 @@ p <- st_as_sf(data.frame(t(coords)), coords=c(1,2))
 p <- st_set_crs(p, '+proj=longlat +datum=WGS84')
 p <- st_transform(p, aea)
 
-# random points for vizualization
-s <- st_sample(x, size=50)
+# # random points for vizualization
+# s <- st_sample(x, size=50)
 
 ### ... why doesn't this work as expected?
 # # get index to intersecting polygons
@@ -56,55 +61,84 @@ s <- st_sample(x, size=50)
 
 
 makeNestedGrids <- function(z) {
-  g.1<- st_make_grid(z, cellsize = 30)
-  g.2 <- st_make_grid(z, cellsize = 90)
-  g.3 <- st_make_grid(z, cellsize = 270)
-  g.4 <- st_make_grid(z, cellsize = 810)
+  g.10 <- st_make_grid(z, cellsize = 10)
+  g.30 <- st_make_grid(z, cellsize = 30)
+  g.90 <- st_make_grid(z, cellsize = 90)
+  g.270 <- st_make_grid(z, cellsize = 270)
+  g.810 <- st_make_grid(z, cellsize = 810)
   
-  return(list(`30`=g.1, `90`=g.2, `270`=g.3, `810`=g.4))
+  s <- st_sample(z, size=1)
+  
+  idx.10 <- which(lengths(st_intersects(g.10, st_buffer(s, 10))) > 0)
+  idx.30 <- which(lengths(st_intersects(g.30, st_buffer(s, 25))) > 0)
+  idx.90 <- which(lengths(st_intersects(g.90, st_buffer(s, 50))) > 0)
+  idx.270 <- which(lengths(st_intersects(g.270, st_buffer(s, 100))) > 0)
+  idx.810 <- which(lengths(st_intersects(g.810, st_buffer(s, 100))) > 0)
+  
+  ## note: indexing records in an sf object without attributes is a little strange
+  ## g.XX are geometry sets vs. simple feature collections
+  return(
+    list(
+      `10m`=g.10[idx.10],
+      `30m`=g.30[idx.30],
+      `90m`=g.90[idx.90], 
+      `270m`=g.270[idx.270],
+      `810m`=g.810[idx.810]
+    )
+  )
 }
 
+# ~ 113 ac. polygon near Fresno State
 idx <- 26
+
+# ~ 34 ac. polygon
+idx <- 629
 ng <- makeNestedGrids(x[idx, ])
 
-cols <- viridis::viridis(4)
-
-par(bg=grey(0.65))
-plot(st_geometry(x[idx,]), border='white')
-# plot(st_geometry(ng[['30']]), add=TRUE, border=cols[1])
-plot(st_geometry(ng[['90']]), add=TRUE, border=cols[2], lwd=1)
-plot(st_geometry(ng[['270']]), add=TRUE, border=cols[3], lwd=3)
-plot(st_geometry(ng[['810']]), add=TRUE, border=cols[4], lwd=3)
-
-
-
-
-# full grid from bbox of SSURGO
-# not very efficient for demonstrations
-g.90 <- st_make_grid(x, cellsize = 90)
-g.270 <- st_make_grid(x, cellsize = 270)
-g.800 <- st_make_grid(x, cellsize = 810)
+# cols <- viridis::viridis(5)
+# 
+# par(bg=grey(0.65))
+# plot(st_geometry(x[idx,]), border='white')
+# plot(st_geometry(ng[['10m']]), add=TRUE, border=cols[1])
+# plot(st_geometry(ng[['30m']]), add=TRUE, border=cols[2])
+# plot(st_geometry(ng[['90m']]), add=TRUE, border=cols[3], lwd=1)
+# plot(st_geometry(ng[['270m']]), add=TRUE, border=cols[4], lwd=3)
+# plot(st_geometry(ng[['810m']]), add=TRUE, border=cols[5], lwd=3)
 
 
-## indexing via spatial intersection, not very efficient nor intuitive
-idx.90 <- which(lengths(st_intersects(g.90, st_buffer(s, 100))) > 0)
-idx.270 <- which(lengths(st_intersects(g.270, st_buffer(s, 100))) > 0)
-idx.800 <- which(lengths(st_intersects(g.800, st_buffer(s, 100))) > 0)
 
+# ## TODO: pick a single delineation, or iterate over a selection of delineations
+# # full grid from bbox of SSURGO
+# # not very efficient for demonstrations
+# g.30 <- st_make_grid(x, cellsize = 30)
+# g.90 <- st_make_grid(x, cellsize = 90)
+# g.270 <- st_make_grid(x, cellsize = 270)
+# g.800 <- st_make_grid(x, cellsize = 810)
+# 
+# 
+# ## indexing via spatial intersection, not very efficient nor intuitive
+# idx.30 <- which(lengths(st_intersects(g.30, st_buffer(s, 50))) > 0)
+# idx.90 <- which(lengths(st_intersects(g.90, st_buffer(s, 100))) > 0)
+# idx.270 <- which(lengths(st_intersects(g.270, st_buffer(s, 100))) > 0)
+# idx.800 <- which(lengths(st_intersects(g.800, st_buffer(s, 100))) > 0)
+# 
 
-par(mar=c(1,1,1,1))
+# par(mar=c(1,1,1,1))
+# 
+# plot(st_geometry(x[idx, ]))
+# plot(st_geometry(s), pch=16, col='firebrick', cex=0.5, add=TRUE)
+# plot(st_geometry(g.800[idx.800]), col=NA, border='royalblue', lty=1, add=TRUE)
+# plot(st_geometry(g.270[idx.270]), col=NA, border='orange', lty=1, add=TRUE)
+# plot(st_geometry(g.90[idx.90]), col=NA, border='yellow', lty=1, add=TRUE)
+# plot(st_geometry(g.30[idx.30]), col=NA, border='white', lty=1, add=TRUE)
 
-plot(st_geometry(x))
-plot(st_geometry(s), pch=16, col='firebrick', cex=0.5, add=TRUE)
-plot(st_geometry(g.800[idx.800]), col=NA, border='royalblue', lty=1, add=TRUE)
-plot(st_geometry(g.270[idx.270]), col=NA, border='orange', lty=1, add=TRUE)
-plot(st_geometry(g.90[idx.90]), col=NA, border='yellow', lty=1, add=TRUE)
+# mapview(x)
 
-
-mv <- mapview(x, fill=FALSE, lwd=1, color='white', legend=FALSE, highlight=FALSE)
-mv <- addFeatures(map = mv, data = st_transform(g.800[idx.800], '+proj=longlat +datum=WGS84'), color='yellow', fill=FALSE, weight=4)
-mv <- addFeatures(map = mv, data = st_transform(g.270[idx.270], '+proj=longlat +datum=WGS84'), color='orange', fill=FALSE, weight=3)
-mv <- addFeatures(map = mv, data = st_transform(g.90[idx.90], '+proj=longlat +datum=WGS84'), color='red', fill=FALSE, weight=2)
-
+mv <- mapview(x[idx, ], fill=FALSE, lwd=3, color='black', legend=FALSE, highlight=FALSE)
+mv <- addFeatures(map = mv, data = st_transform(ng[['810m']], '+proj=longlat +datum=WGS84'), color='royalblue', fill=FALSE, weight=4)
+mv <- addFeatures(map = mv, data = st_transform(ng[['270m']], '+proj=longlat +datum=WGS84'), color='firebrick', fill=FALSE, weight=3)
+mv <- addFeatures(map = mv, data = st_transform(ng[['90m']], '+proj=longlat +datum=WGS84'), color='orange', fill=FALSE, weight=2)
+mv <- addFeatures(map = mv, data = st_transform(ng[['30m']], '+proj=longlat +datum=WGS84'), color='yellow', fill=FALSE, weight=1)
+mv <- addFeatures(map = mv, data = st_transform(ng[['10m']], '+proj=longlat +datum=WGS84'), color='white', fill=TRUE, weight=1)
 
 mv
