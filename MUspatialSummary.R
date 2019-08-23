@@ -3,65 +3,7 @@ library(mapview)
 library(latticeExtra)
 library(tactile)
 
-## TODO: figure out how to compute fractal dimension: sql server syntax is stoopid
-# ( 2.0 * LN(0.25 * ST_Perimeter(wkb_geometry::geography)) ) / ( LN(ST_Area(wkb_geometry::geography)) ) AS fd
-
-MUspatialSummary <- function(m, method='union') {
-  
-  # implicit vectorization via IN statement
-  m.in.st <- format_SQL_in_statement(m)
-  
-  if( ! method %in% c('union', 'bbox')) {
-    stop('method must be one of `union` or `bbox`', call. = FALSE)
-  }
-  
-  
-  # get union of polygon envelopes (BBOX)
-  if(method == 'union') {
-    q <- sprintf("SELECT 
-  geometry::UnionAggregate(mupolygongeo.STEnvelope()).STAsText() AS geom, muname, P.mukey AS mukey
-  -- , MuPolygonKey
-  FROM mupolygon AS P
-  INNER JOIN mapunit AS M ON P.mukey = M.mukey
-  WHERE P.mukey IN %s 
-  GROUP BY P.mukey, muname
-  ;", m.in.st)
-  }
-  
-  # get all polygon envelopes (BBOX)
-  if(method == 'bbox') {
-    q <- sprintf("SELECT 
-geom, muname, mukind, mukey, MuPolygonKey, 
-( 2.0 * LOG(0.25 * mupolygonGeography.STLength()) ) / LOG(mupolygonGeography.STArea() ) AS fd,
-mupolygonGeography.STArea() * 0.000247105 as area_ac
-FROM
-(
-  SELECT
-  mupolygongeo.STEnvelope().STAsText() AS geom, 
-  muname, mukind, P.mukey AS mukey, MuPolygonKey,
-  GEOGRAPHY::STGeomFromWKB(
-    (P.mupolygongeo.STUnion(mupolygongeo.STStartPoint()).STAsBinary()), 
-    4326) as mupolygonGeography
-  from mupolygon AS P 
-  INNER JOIN mapunit AS M ON P.mukey = M.mukey 
-  WHERE P.mukey IN %s
-) AS subselect
-;", m.in.st)
-  }
-  
-  # get the results quietly
-  res <- suppressMessages(SDA_query(q))
-  
-  # safely deal with NULL
-  if(is.null(res))
-    return(NULL)
-  
-  # convert to sp object
-  s <- processSDA_WKT(res)
-  
-  return(s)
-}
-
+source('local-functions.R')
 
 ## CA630: 1:24,000
 # table mtn
@@ -79,6 +21,9 @@ mukey <- '403308'
 # Blount silt loam, ground moraine, 0 to 2 percent slopes
 mukey <- '162786'
 
+## MO071
+# Beemont very gravelly silt loam, 8 to 15 percent slopes, stony (73193)
+mukey <- '2534946'
 
 
 
@@ -99,12 +44,14 @@ mapview(mu.bbox, fill='royalblue', alpha.regions=0.25, color='black', lwd=0.5, l
 mapview(mu.bbox, zcol='fd', alpha.regions=0.25, color='black', lwd=0.5)
 
 
-
-mu.summary <- MUspatialSummary(c('1865918', '456137', '162786', '403308'), method='bbox')
+# get a collection for comparison
+mu.summary <- MUspatialSummary(c('1865918', '456137', '162786', '403308', '2534946'), method='bbox')
 
 d <- mu.summary@data
 d$muname_abbv <- gsub(', ', '\n', d$muname)
 d$muname_abbv <- paste(d$muname_abbv, d$mukind, sep = '\n')
+
+png(file='mu-spatial-summary-fd.png', width=900, height=400, res = 90)
 
 bwplot(muname_abbv ~ fd, data=d, 
        scales=list(alternating=3, y=list(cex=0.75), x=list(tick.number=10)), 
@@ -114,6 +61,10 @@ bwplot(muname_abbv ~ fd, data=d,
          panel.grid(-1, -1)
          panel.bwplot(...)
        })
+
+dev.off()
+
+png(file='mu-spatial-summary-area.png', width=900, height=400, res = 90)
 
 bwplot(muname_abbv ~ area_ac, data=d, 
        scales=list(alternating=3, y=list(cex=0.75), x=list(log=10, tick.number=20)), 
@@ -125,12 +76,16 @@ bwplot(muname_abbv ~ area_ac, data=d,
          panel.bwplot(...)
        })
 
+dev.off()
+
+
 
 xyplot(fd ~ area_ac, groups=muname_abbv, data=d, 
+       type=c('p', 'r'),
        scales=list(y=list(cex=0.75, tick.number=10), x=list(log=10, tick.number=20)), 
        xscale.components=xscale.components.log10ticks, 
        ylab='Fractal Dimension (polygon complexity)', xlab='Delineation Area (ac.)', 
-       par.settings=tactile.theme(superpose.symbol=list(col=brewer.pal(4, 'Set1'), pch=16, alpha=0.5, cex=0.5)),
+       par.settings=tactile.theme(),
        auto.key=list(columns=4, lines=FALSE, points=TRUE, cex=0.75), 
        panel=function(...) {
          panel.grid(-1, -1)

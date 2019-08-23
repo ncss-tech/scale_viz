@@ -7,6 +7,9 @@ library(mapview)
 # https://github.com/r-spatial/leafem
 library(leafem)
 
+source('local-functions.R')
+
+
 
 ## TODO
 # sf methods are strange...
@@ -60,33 +63,6 @@ p <- st_transform(p, aea)
 ## note: 30, 90, 270, 810 cell sizes can be nested
 
 
-makeNestedGrids <- function(z) {
-  g.10 <- st_make_grid(z, cellsize = 10)
-  g.30 <- st_make_grid(z, cellsize = 30)
-  g.90 <- st_make_grid(z, cellsize = 90)
-  g.270 <- st_make_grid(z, cellsize = 270)
-  g.810 <- st_make_grid(z, cellsize = 810)
-  
-  s <- st_sample(z, size=1)
-  
-  idx.10 <- which(lengths(st_intersects(g.10, st_buffer(s, 10))) > 0)
-  idx.30 <- which(lengths(st_intersects(g.30, st_buffer(s, 25))) > 0)
-  idx.90 <- which(lengths(st_intersects(g.90, st_buffer(s, 50))) > 0)
-  idx.270 <- which(lengths(st_intersects(g.270, st_buffer(s, 100))) > 0)
-  idx.810 <- which(lengths(st_intersects(g.810, st_buffer(s, 100))) > 0)
-  
-  ## note: indexing records in an sf object without attributes is a little strange
-  ## g.XX are geometry sets vs. simple feature collections
-  return(
-    list(
-      `10m`=g.10[idx.10],
-      `30m`=g.30[idx.30],
-      `90m`=g.90[idx.90], 
-      `270m`=g.270[idx.270],
-      `810m`=g.810[idx.810]
-    )
-  )
-}
 
 # ~ 113 ac. polygon near Fresno State
 idx <- 26

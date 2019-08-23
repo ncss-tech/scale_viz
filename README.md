@@ -22,6 +22,10 @@ Example delineations or simulated patches near the MMU area would be used to ill
 ![](example-CA654.jpg)
 Here is an example from CA654 (1:24k, published 1966). The 70 ac. delineation used here is symbolized with a 24m (80 ft.) wide band. A randomly located point is buffered to symbolize a practical MMU of 7 ac. (middle of the MMU range for order 3 mapping).
 
+![](example-MO071.jpg)
+
+![](example-MO071-with-grid.jpg)
+
 
 ## Nested Grid Overlay
 
@@ -30,14 +34,17 @@ White lines are order 3 soil mapping (1:24,000 scale) [near Fresno, CA](https://
 ![](grid-size-comparison-90-270-810.jpg)
 
 
-## Three Survey Areas in CA
-
+## Three Survey Areas in CA, one in MO
+  
+   * MO071: order 3
    * CA630: order 3
    * CA792: order 3/4
    * CA790: order 4
    
    
-![](SSA-comparison.png)
+![](SSA-comparison-ac.png)
+
+![](SSA-comparison-fd.png)
 
 
 ## Representative Map Units
