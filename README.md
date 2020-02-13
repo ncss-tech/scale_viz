@@ -1,5 +1,7 @@
 # Intuitive Explanations of Mapping Scale, Survey Order, and MMU
 
+## TODO:
+   * review D.G. Rossiter's [SSM Lecture Notes](http://www.css.cornell.edu/faculty/dgr2/teach/ssm/SSM_LectureNotes2.pdf) on cartographic definitions / thresholds.
 
 
 ## Ideas
