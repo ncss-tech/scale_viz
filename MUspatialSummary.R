@@ -26,6 +26,10 @@ mukey <- '162786'
 mukey <- '2534946'
 
 
+## very large / complex example
+# Pewamo silty clay loam, 0 to 1 percent slopes
+mukey <- '161428'
+
 
 # # extensive MU at land/water interface
 # mukey <- '808530'
