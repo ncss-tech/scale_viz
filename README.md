@@ -2,6 +2,7 @@
 
 ## TODO:
    * review D.G. Rossiter's [SSM Lecture Notes](http://www.css.cornell.edu/faculty/dgr2/teach/ssm/SSM_LectureNotes2.pdf) on cartographic definitions / thresholds.
+   * cross-reference / update official [SSURGO|STATSGO comparison](https://www.nrcs.usda.gov/wps/portal/nrcs/detail/soils/survey/geo/?cid=nrcs142p2_053626)
 
 
 ## Ideas
