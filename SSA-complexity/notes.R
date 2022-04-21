@@ -2,12 +2,13 @@ library(latticeExtra)
 library(hexbin)
 library(RColorBrewer)
 library(viridis)
+library(tactile)
 
 x <- read.csv('fractal-dimension-test.csv.gz')
 head(x)
 nrow(x)
 
-
+.fy <- '2022'
 
 table(x$areasymbol)
 
@@ -23,19 +24,25 @@ summary(x$n_pts)
 
 ## TODO: convert area to acres
 
-
-p.1 <- hexbinplot(fd ~ n_pts, data=x, xbins=50, main='FY2019 SSURGO\n100k Samples', xlab='Polygon Vertex Count', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, scales=list(x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE)
-
-p.2 <- hexbinplot(fd ~ log_sq_m, data=x, xbins=50, main='FY2019 SSURGO\n100k Samples', xlab='Log10 Polygon Area (sq.m)', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, colorkey=FALSE)
-
-p.3 <- hexbinplot(log_sq_m ~ n_pts, data=x, xbins=50, main='FY2019 SSURGO\n100k Samples', xlab='Polygon Vertex Count', ylab='Log10 Polygon Area (sq.m)', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, scales=list(x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE)
-
-print(p.1, split=c(1,1,3,1), more=TRUE)
-print(p.2, split=c(2,1,3,1), more=TRUE)
-print(p.3, split=c(3,1,3,1), more=FALSE)
+.title <- sprintf('FY%s SSURGO\n100k Samples', .fy)
 
 
-hexbinplot(fd ~ n_pts | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main='FY2019 SSURGO\n100k Samples', xlab='Polygon Vertex Count', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3, x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
+p.1 <- hexbinplot(fd ~ n_pts, data=x, xbins=50, main=.title, xlab='Polygon Vertex Count', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, scales=list(x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, par.settings = tactile.theme())
+
+p.2 <- hexbinplot(fd ~ log_sq_m, data=x, xbins=50, main=.title, xlab='Log10 Polygon Area (sq.m)', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, colorkey=FALSE, par.settings = tactile.theme())
+
+p.3 <- hexbinplot(log_sq_m ~ n_pts, data=x, xbins=50, main=.title, xlab='Polygon Vertex Count', ylab='Log10 Polygon Area (sq.m)', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2, scales=list(x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, par.settings = tactile.theme())
+
+ragg::agg_png(file = 'FD-summary-FY2022.png', width = 1250, height = 500, scaling = 1.5)
+
+print(p.3, split=c(1,1,3,1), more=TRUE)
+print(p.1, split=c(2,1,3,1), more=TRUE)
+print(p.2, split=c(3,1,3,1), more=FALSE)
+
+dev.off()
+
+
+hexbinplot(fd ~ n_pts | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main=.title, xlab='Polygon Vertex Count', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3, x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
 
 
 
@@ -43,10 +50,10 @@ hexbinplot(fd ~ n_pts | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins
 x$fd_pctile <- ecdf(x$fd)(x$fd)
 x$n_pts_pctile <- ecdf(x$n_pts)(x$n_pts)
 
-hexbinplot(fd_pctile ~ n_pts | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main='FY2019 SSURGO\n100k Samples', xlab='Polygon Vertex Count', ylab='Fractal Dimension Percentile', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3, x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
+hexbinplot(fd_pctile ~ n_pts | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main=.title, xlab='Polygon Vertex Count', ylab='Fractal Dimension Percentile', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3, x=list(log=10)), xscale.components=xscale.components.log10ticks, colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
 
 # # what does this really mean?
-# hexbinplot(fd_pctile ~ n_pts_pctile | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main='FY2019 SSURGO\n100k Samples', xlab='Polygon Vertex Count Percentile', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3), colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
+# hexbinplot(fd_pctile ~ n_pts_pctile | factor(toupper(substr(areasymbol, 1, 2))), data=x, xbins=30, main=.title, xlab='Polygon Vertex Count Percentile', ylab='Fractal Dimension', trans=log, inv=exp, asp=1, colramp=viridis, type='g', subset=fd < 2 & grepl('ca|la|ne|wy|ak|ia', areasymbol), scales=list(alternating=3), colorkey=FALSE, as.table=TRUE, strip=strip.custom(bg=grey(0.85)))
 
 
 ecdf(x$fd)(1.3)

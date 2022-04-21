@@ -41,6 +41,11 @@ GROUP BY areasymbol;
 -- get some example data
 --
 
+
+\timing
+
+-- ~ 2 minutes
+
 -- https://stackoverflow.com/questions/5297396/quick-random-row-selection-in-postgres/32023533
 set search_path to ssurgo, public;
 CREATE TEMP TABLE xxx AS 
