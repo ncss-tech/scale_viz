@@ -5,6 +5,12 @@ library(tactile)
 library(hexbin)
 
 
+## TODO:
+
+# 1. include misc. areas
+# 2. 
+
+
 equal.prob.H <- function(n, b = 2) {
   p <- rep(1, times = n) / n
   shannonEntropy(p, b = b)
@@ -46,7 +52,7 @@ summary(g$entropy)
 
 
 # investigate these
-# ~ 22% 0-entropy
+# ~ 22% 0-entropy (~72k MU)
 # some related to dropped misc. area components
 prop.table(table(g$entropy == 0))
 
@@ -135,8 +141,10 @@ bwplot(areasymbol ~ entropy, data = g.sub, par.settings = tps, xlab = 'Shannon E
 
 
 
-
 bwplot(mukind ~ entropy, data = g, subset = projectscale %in% c(12000, 24000), par.settings = tps, xlab = 'Shannon Entropy (base 2)', main = '1:12,000 and 1:24,000 Surveys', scales = list(x = list(tick.number = 10)))
+
+
+bwplot(mukind ~ entropy, data = g, subset = projectscale %in% c(12000, 24000), par.settings = tps, xlab = 'Shannon Entropy (base 2)', main = '1:12,000 and 1:24,000 Surveys', scales = list(x = list(tick.number = 10)), varwidth = TRUE)
 
 bwplot(mukind ~ entropy / H.max, data = g, subset = projectscale %in% c(12000, 24000), par.settings = tps, xlab = 'Shannon Entropy / Equal-Probability Entropy', main = '1:12,000 and 1:24,000 Surveys', scales = list(x = list(tick.number = 10)), xlim = c(-0.1, 1.1))
 
@@ -144,6 +152,53 @@ bwplot(mukind ~ entropy / H.max, data = g, subset = projectscale %in% c(12000, 2
 
 # hard to interpret because not all scales are well-represented
 bwplot(factor(projectscale) ~ entropy, data = g, subset = projectscale %in% c(12000, 24000, 250000), par.settings = tps, xlab = 'Shannon Entropy (base 2)', scales = list(x = list(tick.number = 10)))
+
+
+
+##
+library(ggplot2)
+library(ggdist)
+
+ggplot(g, aes(x = entropy, y = mukind)) +
+  stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
+  theme_minimal() +
+  theme(legend.position = c(1, 1), legend.justification ='right', legend.direction	
+        = 'horizontal', legend.background = element_rect(fill = 'white', color = NA), axis.text.y = element_text(size = 10, face = 'bold')) + 
+  stat_summary(geom = 'point', fun = median, shape = 21, fill = 'black', col = 'white', cex = 3) +
+  scale_color_brewer(palette = 'Blues') + 
+  scale_x_continuous(n.breaks = 10) +
+  xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
+  labs(title = 'All Survey Areas FY23', color = 'Interval')
+
+
+
+ggplot(g, aes(x = n, y = mukind)) +
+  stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
+  theme_minimal() +
+  theme(legend.position = c(1, 1), legend.justification ='right', legend.direction	
+        = 'horizontal', legend.background = element_rect(fill = 'white', color = NA), axis.text.y = element_text(size = 10, face = 'bold')) + 
+  stat_summary(geom = 'point', fun = median, shape = 21, fill = 'black', col = 'white', cex = 3) +
+  scale_color_brewer(palette = 'Blues') + 
+  scale_x_continuous(n.breaks = 10) +
+  xlab('Number of Components\nSingle Component and Misc. Area MU Removed') + ylab('') +
+  labs(title = 'All Survey Areas FY23', color = 'Interval')
+
+
+
+
+#
+g.sub <- subset(g, subset = projectscale %in% c(12000, 24000))
+
+ggplot(g.sub, aes(x = entropy, y = mukind)) +
+  stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
+  theme_minimal() +
+  theme(legend.position = c(1, 1), legend.justification ='right', legend.direction	
+        = 'horizontal', legend.background = element_rect(fill = 'white', color = NA), axis.text.y = element_text(size = 12, face = 'bold')) + 
+  stat_summary(geom = 'point', fun = median, shape = 21, fill = 'black', col = 'white', cex = 3) +
+  scale_color_brewer(palette = 'Blues') + 
+  scale_x_continuous(n.breaks = 10) +
+  xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
+  labs(title = '1:12,000 and 1:24,000 Surveys FY23', color = 'Interval')
 
 
 

@@ -6,8 +6,8 @@
 --
  
 -- Notes:
--- * excluding all misc. areas --> misc. area map units with a single component have very low entropy... not a useful indicator
--- * 
+-- * excluding all misc. areas --> misc. area map units with a single component have very low entropy... not a useful indicator (is this a good idea?)
+-- * Dec 2022: attempting to leave in misc. areas, filtering single component MU in R
  
  
  
@@ -30,7 +30,7 @@ FROM ssurgo.mapunit
 JOIN ssurgo.component USING (mukey)
 WHERE comppct_r IS NOT NULL
 AND mukind != ''
-AND compkind != 'Miscellaneous area'
+-- AND compkind != 'Miscellaneous area'
 AND compkind != ''
 ),
 -- total by mukey
@@ -76,7 +76,7 @@ FROM statsgo.mapunit
 JOIN statsgo.component USING (mukey)
 WHERE comppct_r IS NOT NULL
 AND mukind != ''
-AND compkind != 'Miscellaneous area'
+-- AND compkind != 'Miscellaneous area'
 AND compkind != ''
 ),
 -- total by mukey
@@ -110,7 +110,12 @@ GROUP BY areasymbol, projectscale, mukind, mukey ;
 \copy h TO 'entropy-by-mukey.csv' CSV HEADER
 \copy hs TO 'entropy-by-mukey-statsgo.csv' CSV HEADER
 
+--
+-- compress
+--
 
+-- gzip -f entropy-by-mukey.csv
+-- gzip -f entropy-by-mukey-statsgo.csv
 
 --
 -- checking
