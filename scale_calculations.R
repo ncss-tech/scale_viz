@@ -28,6 +28,7 @@ rf <- 1 / 24000
 ## minimum legible delineation ----
 mld_cm2 <- units::set_units(c(0.01, 0.10, 0.25, 0.40, 0.60), cm^2)
 mld_m2  <- units::set_units(mld_cm2, m^2)
+mld_km2  <- units::set_units(mld_cm2, km^2)
 mld_ha  <- units::set_units(mld_cm2, ha)
 mld_ac  <- units::set_units(mld_cm2, acre)
 
@@ -124,24 +125,33 @@ n(0.25, 10^10, 50000)
 20000 == sqrt(1e5^2/0.5 / 50)
 
 
-# N  = sqrt(MLD/MLA) / SN^2
-# N = 1/MLD^2
+# N  = (MLA / MLD * factor) / SN^2
+0.5 == 1/50 * 10^10 / 20000^2
 0.5 == 10^10/50 / 20000^2
 
-n <- function(MLA, MLD, SN, factor = 1) {
-  (MLA / MLD * factor) / SN^2
+n <- function(SN, MLA, MLD, factor = 1) {
+  (MLA / (MLD * factor)) / SN^2
 }
-n(10^10, 50, 20000)
-
+n(20000, 10^10, 50)
 
 
 ## Vink ----
-format(signif((1/0.25*10 * 10^10) / SN2^2, 3), scientific = FALSE)
-n(10^10, 0.25, 24000, 10)
+# format(signif((1/0.25*10 * 10^10) / SN2^2, 3), scientific = FALSE)
+# n(10^10, 0.25, 24000, 10)
 
 ## Rossiter 2003 p36 ----
-format(signif((1/0.4*4 * 10^10) / SN2^2, 3), scientific = FALSE)
-n(10^10, 0.4, 24000, 4)
+
+# format(signif((1/0.4*4 * 10^10) / SN2^2, 3), scientific = FALSE)
+# n(10^10, 0.4, 24000, 4)
+
+n(25000, 10^10, mld_cm2[4], c(2, 10))
+n(25000, 10^10, mld_cm2[4], c(2, 4, 10))
+n(25000, 1, mld_km2[4], c(2, 4, 10))
+
+n(24000, 10000, mld_ac[4], c(2, 4, 10))
+
+SN <- c(2500, 10000, 25000, 50000, 100000, 250000, 1000000, 1e6)
+lapply(SN, function(x) n(x, 1, mld_km2[4], c(2, 4, 10)))
 
 
 ## Hengl 2006 ----
