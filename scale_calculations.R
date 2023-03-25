@@ -53,8 +53,8 @@ sn(quantile(statsgo$m2, p), mld_m2[4])
 sn(quantile(mlra$m2, p), mld_m2[4])
 
 
-SN1 <- as.numeric(sn(MLA = c(10, 30, 100)^2, mld_m2[4]))
-names(SN1) <- c("10-meter", "30-meter", "100-meter")
+SN1 <- as.numeric(sn(MLA = c(10, 30, 100, 1000)^2, mld_m2[1]))
+names(SN1) <- c("10-meter", "30-meter", "100-meter", "1-kilometer")
 SN2 <- c(SN1, SN2)
 SN2
 
@@ -147,8 +147,9 @@ n(20000, 10^10, 50)
 n(25000, 10^10, mld_cm2[4], c(2, 10))
 n(25000, 10^10, mld_cm2[4], c(2, 4, 10))
 n(25000, 1, mld_km2[4], c(2, 4, 10))
-
-n(24000, 10000, mld_ac[4], c(2, 4, 10))
+n(25000, 1, mld_km2[4], c(2, 4, 10))
+n(25000, 20234, mld_ha[4], c(2, 4, 10))
+n(24000, 70000, mld_ac[4], c(2, 4, 10))
 
 SN <- c(2500, 10000, 25000, 50000, 100000, 250000, 1000000, 1e6)
 lapply(SN, function(x) n(x, 1, mld_km2[4], c(2, 4, 10)))
@@ -160,19 +161,30 @@ sqrt(c(1, 4) * 1000^2/10) * 10^2
 signif(mean(sqrt(c(1, 4) * 1000^2/10) * 10^2), 1)
 
 # N = (A * 10^2) / SN^2
-(1/50 * 1e5^2) /   20000^2
-(1000^2 * 10^2^2) / 31622.78^2
-(1000^2 * 10^2^2) / 50000^2
+# N  = (MLA / MLD * factor) / SN^2
+
+round((1000^2 * 10^2^2) / 31622.78^2)
+
 format(signif((1000^2 * 10^2^2) / SN2^2, 3), scientific = FALSE)
 
 
 # table for printing ----
-
-ac <- format(signif(as.numeric(mla(SN2, mld_ac[4])), 2), scientific = FALSE, big.interval = ",")
-ha <- format(signif(as.numeric(mla(SN2, mld_ha[4])), 2), scientific = FALSE, big.interval = ",")
-m2 <- format(signif(as.numeric(mla(SN2, mld_m2[4])), 2), scientific = FALSE, big.interval = ",")
+i1 <- rep(1, 4)
+i2 <- rep(1, 6)
+ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2]))
+ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2]))
+m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2]))
 m  <- signif(sqrt(as.numeric(m2)), 2)
-df <- data.frame(SN = signif(as.numeric(SN2), 2), `MLD ac` = ac, `MLD ha` = ha, `MLD m2` = m2, `MLD m` =  m)
-df <- cbind(`Soil Map` = names(SN2), df)
+df <- data.frame(SN = signif(as.numeric(SN2), 2), `MLA ac` = ac, `MLA ha` = ha, `MLA m2` = m2, `MLA m` =  m)
+df <- cbind(`Examples` = names(SN2), df)
+df[3:6] <- lapply(df[3:6], function(x) format(signif(as.numeric(x), 2), scientific = FALSE, big.interval = ","))
+row.names(df) <- NULL
 df
 
+test <- sapply(SN2, function(x) n(x, 50000, mld_ac[4], c(2, 4, 10)))
+test <- t(test)
+test <- data.frame(Example = row.names(test), test)
+row.names(test) <- NULL
+test[2:4] <- lapply(test[2:4], function(x) format(signif(x, 2), scientific = FALSE, big.interval = ","))
+names(test)[2:4] <- paste0("MLD x ", c(2, 4, 10))
+knitr::kable(test, caption = "Number of observations per 1km2 (i.e. 247 acres)", align = "r")
