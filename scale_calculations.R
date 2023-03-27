@@ -1,3 +1,5 @@
+library(soilDB)
+library(dplyr)
 library(sf)
 
 ssurgo <- read_sf("D:/geodata/soils/")
@@ -8,6 +10,24 @@ statsgo <- read_sf("D:/geodata/soils/wss_gsmsoil_US_[2016-10-13]/spatial/gsmsoil
 mlra$m2     <- st_area(mlra)
 statsgo$m2  <- st_area(statsgo)
 statsgo$cm2 <- units::set_units(statsgo$m2, cm^2)
+
+
+# SSURGO & STATSGO2 map scales
+le <- get_legend_from_SDA(WHERE = "areasymbol LIKE '%'")
+mu <- get_mapunit_from_GDB(dsn = "D:/geodata/soils/gSSURGO_CONUS_202210.gdb") 
+
+sso <- mu %>%
+  group_by(areasymbol, invesintens) %>%
+  summarize(acres = sum(muacres, na.rm = TRUE)) %>%
+  ungroup() %>%
+  arrange(areasymbol, - acres) %>%
+  filter(!duplicated(areasymbol))
+
+le %>%
+  left_join(sso, by = "areasymbol") %>%
+  group_by(invesintens, projectscale) %>%
+  tally(projectscale) %>%
+  View()
 
 
 
@@ -53,8 +73,8 @@ sn(quantile(statsgo$m2, p), mld_m2[4])
 sn(quantile(mlra$m2, p), mld_m2[4])
 
 
-SN1 <- as.numeric(sn(MLA = c(10, 30, 100, 1000)^2, mld_m2[1]))
-names(SN1) <- c("10-meter", "30-meter", "100-meter", "1-kilometer")
+SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
+names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
 SN2 <- c(SN1, SN2)
 SN2
 
@@ -169,12 +189,12 @@ format(signif((1000^2 * 10^2^2) / SN2^2, 3), scientific = FALSE)
 
 
 # table for printing ----
-i1 <- rep(1, 4)
+i1 <- rep(1, 5)
 i2 <- rep(1, 6)
-ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2]))
-ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2]))
-m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2]))
-m  <- signif(sqrt(as.numeric(m2)), 2)
+ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2])) * c(i1 * 4, i2)
+ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2])) * c(i1 * 4, i2)
+m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2])) * c(i1 * 4, i2)
+m  <- signif(sqrt(as.numeric(m2)), 2) / 2
 df <- data.frame(SN = signif(as.numeric(SN2), 2), `MLA ac` = ac, `MLA ha` = ha, `MLA m2` = m2, `MLA m` =  m)
 df <- cbind(`Examples` = names(SN2), df)
 df[3:6] <- lapply(df[3:6], function(x) format(signif(as.numeric(x), 2), scientific = FALSE, big.interval = ","))
