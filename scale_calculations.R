@@ -46,7 +46,7 @@ rf <- 1 / 24000
 
 
 ## minimum legible delineation ----
-mld_cm2 <- units::set_units(c(0.01, 0.10, 0.25, 0.40, 0.60), cm^2)
+mld_cm2 <- units::set_units(c(0.01, 0.1, 0.25, 0.40, 0.60), cm^2)
 mld_m2  <- units::set_units(mld_cm2, m^2)
 mld_km2  <- units::set_units(mld_cm2, km^2)
 mld_ha  <- units::set_units(mld_cm2, ha)
@@ -55,7 +55,7 @@ mld_ac  <- units::set_units(mld_cm2, acre)
 
 ## scale nummber ----
 SN <- 24000
-SN2 <- c(`SSURGO 1st` = 12000, `SSURGO 2nd` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 3500000, LRR = 7500000)
+SN2 <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 3500000, LRR = 7500000)
 
 sn <- function(MLA, MLD) {
 
@@ -194,10 +194,10 @@ i2 <- rep(1, 6)
 ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2])) * c(i1 * 4, i2)
 ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2])) * c(i1 * 4, i2)
 m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2])) * c(i1 * 4, i2)
-m  <- signif(sqrt(as.numeric(m2)), 2) / 2
+m  <- signif(sqrt(as.numeric(m2)), 2) / c(i1 * 2, i2)
 df <- data.frame(SN = signif(as.numeric(SN2), 2), `MLA ac` = ac, `MLA ha` = ha, `MLA m2` = m2, `MLA m` =  m)
 df <- cbind(`Examples` = names(SN2), df)
-df[3:6] <- lapply(df[3:6], function(x) format(signif(as.numeric(x), 2), scientific = FALSE, big.interval = ","))
+df[2:6] <- lapply(df[2:6], function(x) format(signif(as.numeric(x), 2), scientific = FALSE, big.mark = ","))
 row.names(df) <- NULL
 df
 
