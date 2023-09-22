@@ -1,21 +1,25 @@
 library(tactile)
 library(latticeExtra)
-library(rgdal)
+library(sf)
 library(soilDB)
+
+## TODO: 
+## * update to sf/terra
+## * use local copies, sourced via soilDB / sqlite 
 
 # current CA792 linework
 # already in PCS
-CA792 <- readOGR(dsn='L:/NRCS/MLRAShared/CA792/ca792_spatial/FG_CA792_OFFICIAL.gdb', layer='ca792_a', encoding='OpenFileGDB', stringsAsFactors = FALSE)
+CA792 <- read_sf(dsn='L:/NRCS/MLRAShared/CA792/ca792_spatial/FG_CA792_OFFICIAL.gdb', layer='ca792_a', encoding='OpenFileGDB', stringsAsFactors = FALSE)
 
 # already in PCS
-CA630 <- readOGR(dsn='L:/NRCS/MLRAShared/CA630/Archived_OFFICIAL_DB/final/FG_CA630_GIS_2018.gdb', layer='ca630_a', encoding='OpenFileGDB', stringsAsFactors = FALSE)
+CA630 <- read_sf(dsn='L:/NRCS/MLRAShared/CA630/Archived_OFFICIAL_DB/final/FG_CA630_GIS_2018.gdb', layer='ca630_a', encoding='OpenFileGDB', stringsAsFactors = FALSE)
 
 # GCS
 CA790 <- readOGR(dsn='L:/NRCS/MLRAShared/CA790/SSURGO/CA790/spatial', layer='soilmu_a_ca790', stringsAsFactors = FALSE)
 CA790 <- spTransform(CA790, CRS('+proj=utm +zone=11 +datum=NAD83'))
 
 # GCS
-MO071 <- readOGR(dsn='E:/gis_data/SSURGO-SSA/MO071/spatial', layer='soilmu_a_mo071', stringsAsFactors = FALSE)
+MO071 <- read_sf(dsn='E:/gis_data/SSURGO-SSA/MO071/spatial', layer='soilmu_a_mo071', stringsAsFactors = FALSE)
 MO071 <- spTransform(MO071,  CRS('+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0'))
 
 # remove water

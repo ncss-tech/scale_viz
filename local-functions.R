@@ -1,8 +1,9 @@
 
-## TODO: figure out how to compute fractal dimension: sql server syntax is stoopid
+## TODO: figure out how to compute fractal dimension: MS SQL server syntax is stoopid
+# postgis syntax
 # ( 2.0 * LN(0.25 * ST_Perimeter(wkb_geometry::geography)) ) / ( LN(ST_Area(wkb_geometry::geography)) ) AS fd
 
-#' @param x sf object or SpatialPolygonsDataFrame, must be in PCS with units of meters
+#' @param x sf object must be in PCS with units of meters
 fractalDimension <- function(x) {
   
   # area and perimeter for fractal dimension
@@ -35,26 +36,28 @@ MUspatialSummary <- function(m, method='union') {
   # get union of polygon envelopes (BBOX)
   if(method == 'union') {
     q <- sprintf("SELECT 
-  geometry::UnionAggregate(mupolygongeo.STEnvelope()).STAsText() AS geom, muname, P.mukey AS mukey
+  geometry::UnionAggregate(mupolygongeo.STEnvelope()).STAsText() AS geom, muname, P.mukey AS mukey, 
+  CASE WHEN invesintens IS NULL THEN 'missing' ELSE invesintens END AS invesintens
   -- , MuPolygonKey
   FROM mupolygon AS P
   INNER JOIN mapunit AS M ON P.mukey = M.mukey
   WHERE P.mukey IN %s 
-  GROUP BY P.mukey, muname
+  GROUP BY P.mukey, muname, invesintens
   ;", m.in.st)
   }
   
   # get all polygon envelopes (BBOX)
   if(method == 'bbox') {
     q <- sprintf("SELECT 
-geom, muname, mukind, mukey, MuPolygonKey, 
+geom, muname, mukind, mukey, 
+CASE WHEN invesintens IS NULL THEN 'missing' ELSE invesintens END AS invesintens, MuPolygonKey, 
 ( 2.0 * LOG(0.25 * mupolygonGeography.STLength()) ) / LOG(mupolygonGeography.STArea() ) AS fd,
 mupolygonGeography.STArea() * 0.000247105 as area_ac
 FROM
 (
   SELECT
   mupolygongeo.STEnvelope().STAsText() AS geom, 
-  muname, mukind, P.mukey AS mukey, MuPolygonKey,
+  muname, mukind, P.mukey AS mukey, invesintens, MuPolygonKey,
   GEOGRAPHY::STGeomFromWKB(
     (P.mupolygongeo.STUnion(mupolygongeo.STStartPoint()).STAsBinary()), 
     4326) as mupolygonGeography
@@ -74,6 +77,9 @@ FROM
   
   # convert to sp object
   s <- processSDA_WKT(res)
+  
+  # setup survey order factor levels
+  s$invesintens <- factor(s$invesintens, levels = c('missing', 'Order 1', 'Order 2', 'Order 3', 'Order 4', 'Order 5'))
   
   return(s)
 }
@@ -118,13 +124,15 @@ makeNestedGrids <- function(z) {
 #' @param lw line width on the map in mm
 #' 
 #' @return real-world width of line on the ground in meters, based on an assumed 1mm line width on the map
-scaleToLineWidth <- function(s, lw=1, units='m') {
-  sf <- switch(units, m=0.001, f=0.003280839895, mi=6.2137e-7)
+scaleToLineWidth <- function(s, lw = 1, units = 'm') {
+  sf <- switch(units, m = 0.001, f = 0.003280839895, mi = 6.2137e-7)
   # scale factor * line width * unit conversion factor
   res <- s * lw *  sf
   return(res)
 }
 
+
+## TODO: finish updating these to use sf/terra
 
 #' @param mu map unit polygon to buffer according to real world width of line and map scale
 #' @param s map scale (e.g. 1:24,000 -> s=24000)
@@ -165,16 +173,16 @@ MMU_example <- function(p, mmu, n=1, type='random', ...) {
 }
 
 
-#' @geom an SP object with coordinates
+#' @geom sf object
 ZoomToSoilWebGmap <- function(geom) {
   
   # sanity check, need GCS, WGS84
-  if(is.projected(geom)) {
-    p <- spTransform(geom, '+proj=longlat +datum=WGS84')
+  if(!st_is_longlat(geom)) {
+    p <- st_transform(geom, 4326)
   }
   
   # some point within geom
-  xy <- coordinates(gPointOnSurface(geom))
+  xy <- st_coordinates(st_point_on_surface(geom))
   
   # this will get you there
   url <- sprintf("https://casoilresource.lawr.ucdavis.edu/gmap/?loc=%s,%s", xy[, 2], xy[, 1])

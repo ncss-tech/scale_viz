@@ -1,14 +1,26 @@
 library(aqp)
 library(latticeExtra)
-library(viridis)
 library(tactile)
 library(hexbin)
-
+library(soilDB)
+library(sf)
 
 ## TODO:
 
 # 1. include misc. areas
 # 2. 
+
+## order 1 mapping?
+# investigate these more
+.sql <- "SELECT mukey, muname, muacres FROM mapunit where invesintens = 'Order 1';"
+SDA_query(.sql)
+
+s <- fetchSDA_spatial('1147457', by.col = 'mukey')
+wk::as_wkt(st_point_on_surface(s))
+
+# https://casoilresource.lawr.ucdavis.edu/soil_web/list_components.php?mukey=1147457
+# https://casoilresource.lawr.ucdavis.edu/gmap/?loc=46.2365,-91.23553
+
 
 
 equal.prob.H <- function(n, b = 2) {
@@ -30,23 +42,33 @@ epH <- Vectorize(equal.prob.H)
 
 ## how to incorporate area? H/area, by delineation?
 
-
+# created on SoilWeb server
 x <- read.csv('entropy-by-mukey.csv.gz')
 y <- read.csv('entropy-by-mukey-statsgo.csv.gz')
 
-
-x$mukind <- sprintf("SSURGO\n%s", x$mukind)
-y$mukind <- sprintf("STATSGO\n%s", y$mukind)
+# unique mu kinds
+x$u.mukind <- sprintf("SSURGO\n%s", x$mukind)
+y$u.mukind <- sprintf("STATSGO\n%s", y$mukind)
 
 # stack
-vars <- c('areasymbol', 'projectscale', 'mukind', 'mukey', 'entropy', 'n')
+vars <- c('areasymbol', 'projectscale', 'invesintens', 'mukind', 'u.mukind', 'mukey', 'entropy', 'n')
 g <- make.groups(SSURGO = x[, vars], STATSGO = y[, vars])
 
 row.names(g) <- NULL
 
 head(g)
 
-table(g$which, g$mukind, useNA = 'always')
+# set levels
+g$invesintens <- factor(g$invesintens, levels = c('missing', 'Order 1', 'Order 2', 'Order 3', 'Order 4', 'Order 5'))
+g$projectscale <- factor(g$projectscale)
+
+
+
+## TODO: think some more about these
+xtabs( ~ projectscale + mukind, data = g, subset = which == 'SSURGO')
+xtabs( ~ invesintens + mukind, data = g, subset = which == 'SSURGO')
+
+xtabs( ~ which + mukind, data = g)
 
 summary(g$entropy)
 
@@ -63,10 +85,12 @@ z <- g[g$entropy == 0, ]
 head(z)
 
 
-# remove 0-entropy for now
+## remove 0-entropy for now
 g <- subset(g, subset = entropy > 0)
 
 (scale.tab <- sort(round(prop.table(table(g$projectscale)), 3)))
+
+(order.tab <- sort(round(prop.table(table(g$invesintens)), 3)))
 
 
 # equal-prob H
@@ -85,7 +109,7 @@ g[idx, ]$entropy - g[idx, ]$H.max
 tps <- tactile.theme(plot.symbol = list(cex = 0.5))
 
 
-histogram( ~ entropy | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy (base 2)')
+  histogram( ~ entropy | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy (base 2)')
 
 histogram( ~ entropy / H.max | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy / Equal-Probability Entropy')
 
@@ -95,7 +119,7 @@ bwplot(which ~ entropy, data = g, par.settings = tps, xlab = 'Shannon Entropy (b
 
 
 
-p1 <- bwplot(mukind ~ entropy, 
+p1 <- bwplot(u.mukind ~ entropy, 
              data = g, 
              par.settings = tps, 
              xlab = 'Shannon Entropy (base 2)', 
@@ -109,7 +133,7 @@ p1 <- bwplot(mukind ~ entropy,
 )
 
 
-p2 <- bwplot(mukind ~ entropy / H.max, 
+p2 <- bwplot(u.mukind ~ entropy / H.max, 
              data = g, 
              par.settings = tps, 
              xlab = 'Shannon Entropy / Equal-Probability Entropy', 
@@ -129,6 +153,26 @@ print(p1, split = c(1, 1, 1, 2), more = TRUE)
 print(p2, split = c(1, 2, 1, 2), more = FALSE)
 
 dev.off()
+
+
+
+## interesting, mu-level mapping intensity
+
+bwplot(invesintens ~ entropy, 
+       data = g, 
+       par.settings = tps, 
+       xlab = 'Shannon Entropy (base 2)', 
+       main = '', 
+       scales = list(x = list(tick.number = 10)), 
+       varwidth = FALSE, 
+       panel = function(...) {
+         panel.grid(h = 0, v = -1)
+         panel.bwplot(...)
+       }
+)
+
+
+
 
 
 g.sub <- subset(g, subset = areasymbol %in% c('tx027', 'ca630', 'ca113', 'ca792', 'US'))
@@ -171,6 +215,19 @@ ggplot(g, aes(x = entropy, y = mukind)) +
   labs(title = 'All Survey Areas FY23', color = 'Interval')
 
 
+ggplot(g, aes(x = entropy, y = invesintens)) +
+  stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
+  theme_minimal() +
+  theme(legend.position = c(1, 1), legend.justification ='right', legend.direction	
+        = 'horizontal', legend.background = element_rect(fill = 'white', color = NA), axis.text.y = element_text(size = 10, face = 'bold')) + 
+  stat_summary(geom = 'point', fun = median, shape = 21, fill = 'black', col = 'white', cex = 3) +
+  scale_color_brewer(palette = 'Blues') + 
+  scale_x_continuous(n.breaks = 10) +
+  xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
+  labs(title = 'All Survey Areas FY23', color = 'Interval')
+
+
+
 
 ggplot(g, aes(x = n, y = mukind)) +
   stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
@@ -182,6 +239,19 @@ ggplot(g, aes(x = n, y = mukind)) +
   scale_x_continuous(n.breaks = 10) +
   xlab('Number of Components\nSingle Component and Misc. Area MU Removed') + ylab('') +
   labs(title = 'All Survey Areas FY23', color = 'Interval')
+
+
+ggplot(g, aes(x = n, y = invesintens)) +
+  stat_interval(inherit.aes = TRUE, orientation = 'horizontal', size = 5) + 
+  theme_minimal() +
+  theme(legend.position = c(1, 1), legend.justification ='right', legend.direction	
+        = 'horizontal', legend.background = element_rect(fill = 'white', color = NA), axis.text.y = element_text(size = 10, face = 'bold')) + 
+  stat_summary(geom = 'point', fun = median, shape = 21, fill = 'black', col = 'white', cex = 3) +
+  scale_color_brewer(palette = 'Blues') + 
+  scale_x_continuous(n.breaks = 10) +
+  xlab('Number of Components\nSingle Component and Misc. Area MU Removed') + ylab('') +
+  labs(title = 'All Survey Areas FY23', color = 'Interval')
+
 
 
 

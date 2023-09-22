@@ -1,10 +1,8 @@
-require(sp)
-require(sf)
-require(rgdal)
-require(rgeos)
-require(mapview)
-require(leafem)
-require(soilDB)
+library(terra)
+library(sf)
+library(mapview)
+library(leafem)
+library(soilDB)
 
 source('local-functions.R')
 
@@ -12,7 +10,8 @@ source('local-functions.R')
 ssa.scale <- 24000
 
 # an example point
-p <- SpatialPoints(cbind(-91.3166, 38.4351), proj4string = CRS('+proj=longlat +datum=WGS84'))
+p <- vect('POINT(-91.3166 38.4351)', crs = 'epsg:4326')
+p <- st_as_sf(p)
 
 # take a peek in SoilWeb
 ZoomToSoilWebGmap(p)

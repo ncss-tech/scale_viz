@@ -1,3 +1,8 @@
+## TODO: 
+#  * update to sf/terra
+#  * perform analysis here
+#
+
 library(tactile)
 library(latticeExtra)
 library(rgdal)

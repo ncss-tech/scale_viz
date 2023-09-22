@@ -1,5 +1,9 @@
 # Intuitive Explanations of Mapping Scale, Survey Order, and MMU
 
+## Key References:
+  * 
+
+
 ## TODO:
    * review D.G. Rossiter's [SSM Lecture Notes](http://www.css.cornell.edu/faculty/dgr2/_static/files/pdf/SSM_LectureNotes2.pdf) on cartographic definitions / thresholds.
    * class accuracy [Three thoughts on soil class maps: (1) Evaluating classification accuracy (2) Taxonomic vs. geographic soil classes (3) Soil geoforms & phenoforms](http://www.css.cornell.edu/faculty/dgr2/_static/files/pdf/PLSCS_seminar_22Mar2018_Rossiter.pdf)

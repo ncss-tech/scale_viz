@@ -8,8 +8,8 @@
 -- Notes:
 -- * excluding all misc. areas --> misc. area map units with a single component have very low entropy... not a useful indicator (is this a good idea?)
 -- * Dec 2022: attempting to leave in misc. areas, filtering single component MU in R
- 
- 
+-- * Sept 2023: adding 'invesintens' field from mapunit table, this holds MU-level survey investigation intensity codes -- related to survey order
+-- 
  
 \timing
 
@@ -25,6 +25,7 @@ CREATE TEMP TABLE h AS
 WITH component_p AS (
 -- areasymbol is not citext in most ssurgo.* tables, just lower-case
 SELECT mapunit.areasymbol::citext AS areasymbol, 
+CASE WHEN invesintens IS NULL THEN 'missing' ELSE invesintens END AS invesintens, 
 mukind, mukey, comppct_r / 100.0 AS comppct
 FROM ssurgo.mapunit 
 JOIN ssurgo.component USING (mukey)
@@ -42,13 +43,13 @@ GROUP BY mukey
 -- proportions
 proportions AS (
 SELECT 
-component_p.areasymbol, component_p.mukind, component_p.mukey, comppct / sum_comppct AS p
+component_p.areasymbol, component_p.invesintens, component_p.mukind, component_p.mukey, comppct / sum_comppct AS p
 FROM component_p JOIN total_p USING (mukey)
 )
 -- entropy
 -- also
 SELECT
-areasymbol, coryear, projectscale, mukind, mukey, 
+areasymbol, coryear, projectscale, invesintens, mukind, mukey, 
 -- note: log(0) --> error
 -- either add fuzz or remove
 ROUND(- SUM(p * LOG(2.0, p::numeric)), 6) AS entropy,
@@ -58,7 +59,7 @@ FROM proportions
 JOIN soilweb.ssurgo_status USING (areasymbol)
 -- test this: retain only real proportions
 WHERE p > 0
-GROUP BY areasymbol, coryear, projectscale, mukind, mukey ;
+GROUP BY areasymbol, coryear, projectscale, invesintens, mukind, mukey ;
 
 
 
@@ -71,7 +72,9 @@ CREATE TEMP TABLE hs AS
 
 -- total component pct
 WITH component_p AS (
-SELECT mukind, mukey, comppct_r / 100.0 AS comppct
+SELECT 
+CASE WHEN invesintens IS NULL THEN 'missing' ELSE invesintens END AS invesintens, 
+mukind, mukey, comppct_r / 100.0 AS comppct
 FROM statsgo.mapunit 
 JOIN statsgo.component USING (mukey)
 WHERE comppct_r IS NOT NULL
@@ -88,14 +91,14 @@ GROUP BY mukey
 -- proportions
 proportions AS (
 SELECT 
-component_p.mukind, component_p.mukey, comppct / sum_comppct AS p
+component_p.invesintens, component_p.mukind, component_p.mukey, comppct / sum_comppct AS p
 FROM component_p JOIN total_p USING (mukey)
 )
 -- entropy
 -- also
 SELECT
 -- double-check / think about scale
-'US' AS areasymbol, 250000::integer AS projectscale, mukind, mukey, 
+'US' AS areasymbol, 250000::integer AS projectscale, invesintens, mukind, mukey, 
 -- note: log(0) --> error
 -- either add fuzz or remove
 ROUND(- SUM(p * LOG(2.0, p::numeric)), 6) AS entropy,
@@ -104,7 +107,7 @@ COUNT(p) AS n
 FROM proportions
 -- test this: retain only real proportions
 WHERE p > 0
-GROUP BY areasymbol, projectscale, mukind, mukey ;
+GROUP BY areasymbol, projectscale, invesintens, mukind, mukey ;
 
 
 \copy h TO 'entropy-by-mukey.csv' CSV HEADER

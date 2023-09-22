@@ -1,5 +1,4 @@
 library(soilDB)
-library(sp)
 library(sf)
 library(mapview)
 
@@ -20,7 +19,7 @@ source('local-functions.R')
 
 
 coords <- c(-119.7936, 36.7426)
-aea <- '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+aea <- 5070
 
 q <- sprintf("SELECT  mupolygongeo.STIntersection( geometry::STPointFromText('POINT(%f %f)', 4326).STBuffer(0.1).STEnvelope() ) AS geom, mukey
                FROM mupolygon
@@ -31,15 +30,13 @@ q <- sprintf("SELECT  mupolygongeo.STIntersection( geometry::STPointFromText('PO
 x <- SDA_query(q)
 x <- processSDA_WKT(x)
 
-# convert to sf class object and transform to CONUS AEA
-x <- st_as_sf(x)
+# transform to CONUS AEA
 x <- st_transform(x, aea)
 
 # convert points to sf and CONUS AEA
 # coordinates from matrix -> sf
 # that is annoying
-p <- st_as_sf(data.frame(t(coords)), coords=c(1,2))
-p <- st_set_crs(p, '+proj=longlat +datum=WGS84')
+p <- st_as_sf(data.frame(t(coords)), coords=c(1,2), crs = 4326)
 p <- st_transform(p, aea)
 
 # # random points for vizualization
@@ -71,15 +68,15 @@ idx <- 26
 idx <- 629
 ng <- makeNestedGrids(x[idx, ])
 
-# cols <- viridis::viridis(5)
-# 
-# par(bg=grey(0.65))
-# plot(st_geometry(x[idx,]), border='white')
-# plot(st_geometry(ng[['10m']]), add=TRUE, border=cols[1])
-# plot(st_geometry(ng[['30m']]), add=TRUE, border=cols[2])
-# plot(st_geometry(ng[['90m']]), add=TRUE, border=cols[3], lwd=1)
-# plot(st_geometry(ng[['270m']]), add=TRUE, border=cols[4], lwd=3)
-# plot(st_geometry(ng[['810m']]), add=TRUE, border=cols[5], lwd=3)
+cols <- viridis::viridis(5)
+
+par(bg=grey(0.65))
+plot(st_geometry(x[idx,]), border='white')
+plot(st_geometry(ng[['10m']]), add=TRUE, border=cols[1])
+plot(st_geometry(ng[['30m']]), add=TRUE, border=cols[2])
+plot(st_geometry(ng[['90m']]), add=TRUE, border=cols[3], lwd=1)
+plot(st_geometry(ng[['270m']]), add=TRUE, border=cols[4], lwd=3)
+plot(st_geometry(ng[['810m']]), add=TRUE, border=cols[5], lwd=3)
 
 
 
@@ -110,11 +107,11 @@ ng <- makeNestedGrids(x[idx, ])
 
 # mapview(x)
 
-mv <- mapview(x[idx, ], fill=FALSE, lwd=3, color='black', legend=FALSE, highlight=FALSE)
-mv <- addFeatures(map = mv, data = st_transform(ng[['810m']], '+proj=longlat +datum=WGS84'), color='royalblue', fill=FALSE, weight=4)
-mv <- addFeatures(map = mv, data = st_transform(ng[['270m']], '+proj=longlat +datum=WGS84'), color='firebrick', fill=FALSE, weight=3)
-mv <- addFeatures(map = mv, data = st_transform(ng[['90m']], '+proj=longlat +datum=WGS84'), color='orange', fill=FALSE, weight=2)
-mv <- addFeatures(map = mv, data = st_transform(ng[['30m']], '+proj=longlat +datum=WGS84'), color='yellow', fill=FALSE, weight=1)
-mv <- addFeatures(map = mv, data = st_transform(ng[['10m']], '+proj=longlat +datum=WGS84'), color='white', fill=TRUE, weight=1)
+mv <- mapview(x[idx, ], lwd = 3, color = 'black', legend = FALSE, highlight = FALSE)
+mv <- addFeatures(map = mv, data = st_transform(ng[['810m']], '+proj=longlat +datum=WGS84'), color='royalblue', weight=4)
+mv <- addFeatures(map = mv, data = st_transform(ng[['270m']], '+proj=longlat +datum=WGS84'), color='firebrick', weight=3)
+mv <- addFeatures(map = mv, data = st_transform(ng[['90m']], '+proj=longlat +datum=WGS84'), color='orange', weight=2)
+mv <- addFeatures(map = mv, data = st_transform(ng[['30m']], '+proj=longlat +datum=WGS84'), color='yellow', weight=1)
+mv <- addFeatures(map = mv, data = st_transform(ng[['10m']], '+proj=longlat +datum=WGS84'), color='white', weight=1)
 
 mv

@@ -1,6 +1,5 @@
 # load libraries
-require(rgdal)
-require(rgeos)
+require(terra)
 require(mapview)
 require(soilDB)
 
@@ -10,7 +9,9 @@ source('local-functions.R')
 scaleToLineWidth(c(12000, 24000, 65000, 250000, 5e6), units = 'f')
 scaleToLineWidth(c(12000, 24000, 65000, 250000, 5e6), units = 'm')
 
-# 
+
+## TODO: update to terra
+
 # 
 # # MLRA boundary polygons
 # m <- readOGR(dsn="L:/NRCS/MLRAShared/Geodata/Boundaries/MLRAs/MLRAs_17_18_22A", layer = "MLRA_17_18_and_22A")
