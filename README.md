@@ -1,7 +1,7 @@
 # Intuitive Explanations of Mapping Scale, Survey Order, and MMU
 
 ## Key References:
-  * 
+  * https://www.researchgate.net/publication/291877360_Measuring_spatial_resolution
 
 
 ## TODO:
