@@ -26,6 +26,8 @@ knitr::kable(z, digits = 3)
 
 ###
 
+# https://casoilresource.lawr.ucdavis.edu/gmap/?loc=36.51233,-118.59492,z13
+
 # make a bounding box and assign a CRS (4326: GCS, WGS84)
 a <- vect('POLYGON((-118.7220 36.4500,-118.7220 36.5746,-118.4678 36.5746,-118.4678 36.4500,-118.7220 36.4500))', crs = 'epsg:4326')
 
