@@ -109,7 +109,7 @@ g[idx, ]$entropy - g[idx, ]$H.max
 tps <- tactile.theme(plot.symbol = list(cex = 0.5))
 
 
-  histogram( ~ entropy | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy (base 2)')
+histogram( ~ entropy | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy (base 2)')
 
 histogram( ~ entropy / H.max | which, data = g, par.settings = tps, breaks = 100, scales = list(alternating = 1, x = list(tick.number = 10), y = list(alternating = 3)), xlab = 'Shannon Entropy / Equal-Probability Entropy')
 
@@ -171,6 +171,21 @@ bwplot(invesintens ~ entropy,
        }
 )
 
+# SSURGO only
+bwplot(invesintens ~ entropy, 
+       data = g, 
+       subset = which == 'SSURGO',
+       par.settings = tps, 
+       xlab = 'Shannon Entropy (base 2)', 
+       main = '', 
+       scales = list(x = list(tick.number = 10)), 
+       varwidth = FALSE, 
+       panel = function(...) {
+         panel.grid(h = 0, v = -1)
+         panel.bwplot(...)
+       }
+)
+
 
 
 
@@ -212,7 +227,7 @@ ggplot(g, aes(x = entropy, y = mukind)) +
   scale_color_brewer(palette = 'Blues') + 
   scale_x_continuous(n.breaks = 10) +
   xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
-  labs(title = 'All Survey Areas FY23', color = 'Interval')
+  labs(title = 'All Survey Areas FY24', color = 'Interval')
 
 
 ggplot(g, aes(x = entropy, y = invesintens)) +
@@ -224,7 +239,7 @@ ggplot(g, aes(x = entropy, y = invesintens)) +
   scale_color_brewer(palette = 'Blues') + 
   scale_x_continuous(n.breaks = 10) +
   xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
-  labs(title = 'All Survey Areas FY23', color = 'Interval')
+  labs(title = 'All Survey Areas FY24', color = 'Interval')
 
 
 
@@ -238,7 +253,7 @@ ggplot(g, aes(x = n, y = mukind)) +
   scale_color_brewer(palette = 'Blues') + 
   scale_x_continuous(n.breaks = 10) +
   xlab('Number of Components\nSingle Component and Misc. Area MU Removed') + ylab('') +
-  labs(title = 'All Survey Areas FY23', color = 'Interval')
+  labs(title = 'All Survey Areas FY24', color = 'Interval')
 
 
 ggplot(g, aes(x = n, y = invesintens)) +
@@ -250,7 +265,7 @@ ggplot(g, aes(x = n, y = invesintens)) +
   scale_color_brewer(palette = 'Blues') + 
   scale_x_continuous(n.breaks = 10) +
   xlab('Number of Components\nSingle Component and Misc. Area MU Removed') + ylab('') +
-  labs(title = 'All Survey Areas FY23', color = 'Interval')
+  labs(title = 'All Survey Areas FY24', color = 'Interval')
 
 
 
@@ -268,7 +283,7 @@ ggplot(g.sub, aes(x = entropy, y = mukind)) +
   scale_color_brewer(palette = 'Blues') + 
   scale_x_continuous(n.breaks = 10) +
   xlab('Shannon Entropy (base 2)\nSingle Component and Misc. Area MU Removed') + ylab('') +
-  labs(title = '1:12,000 and 1:24,000 Surveys FY23', color = 'Interval')
+  labs(title = '1:12,000 and 1:24,000 Surveys FY24', color = 'Interval')
 
 
 

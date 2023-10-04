@@ -17,25 +17,31 @@ z <- z[which(z$entropy > 0), ]
 
 
 # figure elements and style
-.fy <- '2023'
+.fy <- '2024'
 .title <- sprintf('FY%s SSURGO\n100k Samples', .fy)
 .cp <- hcl.colors(100, 'zissou1')
 .cpf <- colorRampPalette(.cp)
 
+.file <- sprintf("FD-vs-H-FY%s.png", .fy)
+ragg::agg_png(file = .file, width = 1200, height = 1200, scaling = 2)
+
 hexbinplot(
   fd ~ entropy, 
   data = z, 
-  xbins = 25, 
+  xbins = 60, 
   main = .title, 
-  xlab = 'Shannon Entropy (base 2)', 
-  ylab = 'Fractal Dimension', 
+  xlab = 'Shannon Entropy [base 2] (component percentages)', 
+  ylab = 'Fractal Dimension (geometry)', 
   trans = log, 
   inv = exp, 
   asp = 1, 
   colramp = .cpf, 
   type = 'g', 
   subset = fd < 1.9, 
-  scales = list(tick.number = 6, alterntating = 1), 
+  scales = list(tick.number = 8, alterntating = 1), 
   colorkey = FALSE, 
   par.settings = tactile.theme()
 )
+
+dev.off()
+

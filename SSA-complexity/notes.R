@@ -13,7 +13,7 @@ x$invesintens <- factor(x$invesintens, levels = c('missing', 'Order 1', 'Order 2
 
 x$projectscale <- factor(x$projectscale)
 
-.fy <- '2023'
+.fy <- '2024'
 
 table(x$areasymbol)
 table(x$invesintens)
@@ -248,6 +248,6 @@ ecdf(x$fd)(1.48329949700171)
 ecdf(x$fd)(1.29691553046904)
 
 
-
+x[x$fd > 1.9, ]
 
 
