@@ -4,6 +4,23 @@ library(tactile)
 library(terra)
 library(soilDB)
 
+## too complex to run interactively
+
+# SDA top 10 offenders
+# via Phil Anzel
+.sql <- "SELECT TOP 10  MAX (m.vertex_count) AS max_vertex_count, m.mukey
+FROM (SELECT SUM(mupolygongeo.STNumPoints()) AS vertex_count, mupolygon.mukey
+FROM mupolygon
+INNER JOIN mapunit ON mapunit.mukey = mupolygon.mukey
+INNER JOIN legend ON mapunit.lkey = legend.lkey AND legend.areasymbol <> 'US'
+GROUP BY mupolygon.mukey) AS m
+GROUP BY m.vertex_count, m.mukey
+ORDER BY m.vertex_count, m.mukey ;
+"
+# x <- SDA_query(.sql)
+
+
+
 x <- read.csv('fractal-dimension-test.csv.gz')
 head(x)
 nrow(x)
@@ -71,13 +88,14 @@ plot(p, add = TRUE, pch = 16, col = 2)
 .thresh <- 1.9
 
 # figure elements and style
-.title <- sprintf('FY%s SSURGO\n100k Samples', .fy)
+.nsamples <- round(nrow(x), -3) / 1000
+.title <- sprintf('FY%s SSURGO\n%sk Samples', .fy, .nsamples)
 .cp <- hcl.colors(100, 'zissou1')
 .cpf <- colorRampPalette(.cp)
 
 ## TODO: convert area to acres
 
-
+options(scipen = 20)
 
 p.1 <- hexbinplot(
   fd ~ n_pts, 
@@ -248,6 +266,6 @@ ecdf(x$fd)(1.48329949700171)
 ecdf(x$fd)(1.29691553046904)
 
 
-x[x$fd > 1.9, ]
+x[x$fd > 1.6, ]
 
 

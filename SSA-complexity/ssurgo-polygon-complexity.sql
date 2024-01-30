@@ -66,7 +66,7 @@ coryear, projectscale
 FROM 
 -- random sampling from a table
 -- https://stackoverflow.com/questions/5297396/quick-random-row-selection-in-postgres/32023533
-ssurgo.mapunit_poly TABLESAMPLE SYSTEM_ROWS(100000)
+ssurgo.mapunit_poly TABLESAMPLE SYSTEM_ROWS(200000)
 JOIN ssurgo.mapunit USING (mukey)
 -- must make case insensitive
 JOIN soilweb.ssurgo_status ON mapunit.areasymbol::citext = ssurgo_status.areasymbol ;
