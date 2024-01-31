@@ -21,7 +21,7 @@ ORDER BY m.vertex_count, m.mukey ;
 
 
 
-x <- read.csv('fractal-dimension-test.csv.gz')
+x <- read.csv('fractal-dimension-samples.csv.gz')
 head(x)
 nrow(x)
 

@@ -42,7 +42,8 @@ epH <- Vectorize(equal.prob.H)
 
 ## how to incorporate area? H/area, by delineation?
 
-# created on SoilWeb server
+## created on SoilWeb server
+# SSA/
 x <- read.csv('entropy-by-mukey.csv.gz')
 y <- read.csv('entropy-by-mukey-statsgo.csv.gz')
 

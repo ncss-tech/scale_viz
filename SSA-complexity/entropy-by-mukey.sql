@@ -1,4 +1,8 @@
--- Compute Shanon Entropy 
+-- Compute Shanon Entropy via component percentages by map unit KEY
+-- 
+-- 
+
+-- Data are saved to csv.gz for now, no permanent place in SoilWeb
 
 
 --
@@ -113,15 +117,12 @@ GROUP BY areasymbol, projectscale, invesintens, mukind, mukey ;
 \copy h TO 'entropy-by-mukey.csv' CSV HEADER
 \copy hs TO 'entropy-by-mukey-statsgo.csv' CSV HEADER
 
---
--- compress
---
 
--- gzip -f entropy-by-mukey.csv
--- gzip -f entropy-by-mukey-statsgo.csv
+-- TODO possibly load into permanent metadata tables
+
 
 --
--- checking
+-- checking: ok
 --
 
 
