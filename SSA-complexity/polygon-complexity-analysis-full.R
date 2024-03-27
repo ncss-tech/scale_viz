@@ -4,8 +4,11 @@ library(latticeExtra)
 library(hexbin)
 library(tactile)
 
-x <- fread(file = 'mu-polygon-complexity.txt.gz', header = FALSE, showProgress = TRUE, stringsAsFactors = FALSE, verbose = TRUE)
+# giant file
+# no headers
+x <- fread(file = 'mu-polygon-complexity.txt.gz', sep = '|', header = FALSE, showProgress = TRUE, stringsAsFactors = FALSE, verbose = TRUE)
 
+# column names from inspection of original SQL query
 head(x)
 names(x) <- c('areasymbol', 'ogc_fid', 'mukey', 'fd', "log_sq_m", "n_pts", "invesintens", "coryear", "projectscale")
 
@@ -15,6 +18,20 @@ names(x) <- c('areasymbol', 'ogc_fid', 'mukey', 'fd', "log_sq_m", "n_pts", "inve
 ##  -> very small polygons, very large FD, negative FD !
 ##  -> consider filtering on vertex count
 summary(x)
+
+quantile(x$fd, probs = c(0.01, 0.99))
+quantile(x$n_pts, probs = c(0.01, 0.99))
+quantile(x$log_sq_m, probs = c(0.01, 0.99))
+
+x[x$fd > 1.2 & x$log_sq_m > 10, ]
+
+x[x$fd > 1.6, ]
+
+x[x$n_pts < 5, ]
+
+z <- x[x$n_pts > 100000, ]
+
+soilDB::format_SQL_in_statement(z$ogc_fid)
 
 
 ## flag wacky polygons

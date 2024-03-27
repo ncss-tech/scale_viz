@@ -1,9 +1,12 @@
+-- Just some notes, this is done automatically on SoilWeb with each refresh
+--
+--
+
+
+
 -- Compute Shanon Entropy via component percentages by map unit KEY
 -- 
 -- 
-
--- Data are saved to csv.gz for now, no permanent place in SoilWeb
-
 
 --
 -- Of course we don't need to use area... because we are talking about proportions
