@@ -212,10 +212,17 @@ mla(SN_SSM_Table_4_4, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientif
 
 ## NSSH 648 1993 ----
 NSSH_648_1993 <- data.frame(
-  SN        = c(LRU = 250000, MLRA = 7500000, LLR = 10000000),
-  MLA_acres = c(LRU = NA,     MLRA = 1434803, LRR = NA)
+  SN        = c(
+    SSURGO   =       NA, 
+    STATSGO  =   250000, 
+    LRU      =   250000, 
+    MLRA     =  7500000, 
+    LLR      = 10000000),
+  MLA_acres = c(
+    SSURGO = NA, STATSGO = NA,
+    LRU = NA,     MLRA = 1434803, LRR = NA)
 )
-NSSH_648_2017 |> 
+NSSH_648_1993 |> 
   cbind(
     MLA_calc = mla(NSSH_648_1993$SN, mld_ac[6]) |> 
       format(big.mark = ",", scientific = FALSE)
@@ -224,6 +231,7 @@ NSSH_648_2017 |>
 
 
 ## NSSH 648 2017 ----
+# this version has a typo, the 2024 corrected these numbers at 1 cm^2 except for the SSURGO dataset which should be 0.4 cm^2
 NSSH_648_2017 <- data.frame(
   SN = c(
     SSURGO  = c(CONUS =   24000, AK =      NA),
@@ -260,9 +268,42 @@ NSSH_648_2017 |>
       format(big.makr = ", ", scientific = FALSE)
     )
 # these values are NOT close to what is printed in the text, using the 1 cm^2 MLD
+# these values are correct to what is printed in the 2024 text, using the 1 cm^2 MLD
 
 
+## NSSH 648 2024 ----
+# this version has a typo, the SSURGO dataset which should be 0.4 cm^2
+NSSH_648_2024 <- data.frame(
+  SN = c(
+    SSURGO  = c(CONUS =   12000, AK =      NA),
+    STATSGO = c(CONUS =  250000, AK =  500000),
+    LRU     = c(CONUS = 1000000, AK = 5000000), 
+    MLRA    = c(CONUS = 5000000, AK = 7500000), 
+    LLR     = c(CONUS = 7500000, AK = 10000000)),
+  MLA_acres = c(
+    SSURGO  = c(      5, NA),
+    STATSGO = c(   1545, NA),
+    LRU     = c(  25000, NA),     
+    MLRA    = c( 620000, NA), 
+    LRR     = c(1400000, NA))
+)
+NSSH_648_2024 |> 
+  cbind(
+    MLA_calc = mla(NSSH_648_2024$SN, mld_ac[6]) |> 
+      signif(2) |> 
+      format(big.makr = ", ", scientific = FALSE)
+  )
+# these values are close to what is printed in the text, using the 1 cm^2 MLD
+# only the 
 
+NSSH_648_2017 |> 
+  cbind(
+    MLA_calc = mla(NSSH_648_2017$SN, mld_ac[6]) |> 
+      signif(2) |> 
+      format(big.makr = ", ", scientific = FALSE)
+  )
+# these values are NOT close to what is printed in the text, using the 1 cm^2 MLD
+# these values are correct to what is printed in the 2024 text, using the 1 cm^2 MLD
 
 
 ## Landing Page ----
@@ -302,16 +343,35 @@ sn(quantile(statsgo$acres[idx_conus_statsgo], p), mld_ac[6]) |> signif(2) |> for
 # the 0th percentile is close to the 1:5,000,000 quoted in the 2017 NSSH Part 648
 
 
+
 # table for printing ----
+SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
+names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
+
+SN2 <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 5000000, LRR = 7500000)
+
+SN2 <- c(SN1, SN2)
+SN2
+
+
 i1 <- rep(1, 5)
-i2 <- rep(1, 6)
-ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2])) * c(i1 * 4, i2)
-ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2])) * c(i1 * 4, i2)
-m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2])) * c(i1 * 4, i2)
-m  <- signif(sqrt(as.numeric(m2)), 2) / c(i1 * 2, i2)
-df <- data.frame(SN = signif(as.numeric(SN2), 2), `MLA ac` = ac, `MLA ha` = ha, `MLA m2` = m2, `MLA m` =  m)
+i2 <- rep(1, 2)
+i3 <- rep(1, 4)
+ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
+ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
+m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
+m  <- signif(sqrt(as.numeric(m2)), 2) / (c(i1,  i2, i3) * 2)
+df <- data.frame(
+  SN = signif(as.numeric(SN2), 2), 
+  `MLA ac` = ac, 
+  `MLA ha` = ha, 
+  `MLA m2` = m2, 
+  `MLA m` =  m
+  )
 df <- cbind(`Examples` = names(SN2), df)
-df[2:6] <- lapply(df[2:6], function(x) format(signif(as.numeric(x), 2), scientific = FALSE, big.mark = ","))
+df[2:6] <- lapply(df[2:6], function(x) {
+  x |> as.numeric() |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+})
 row.names(df) <- NULL
 df
 
