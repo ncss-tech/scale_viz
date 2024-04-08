@@ -6,13 +6,21 @@ library(dplyr)
 library(sf)
 
 ssurgo <- read_sf("D:/geodata/soils/")
+ssa <- read_sf("D:/geodata/soils/gNATSGO_CONUS_Oct2023/gNATSGO_CONUS.gdb", layer = "SAPOLYGON")
 
-mlra    <- read_sf("D:/geodata/soils/MLRA_52.shp") |> st_transform(5070)
+mlra31    <- read_sf("D:/geodata/soils/mlra_v31_l48/mlra_v31_l48.shp") |> st_transform(5070)
+mlra52    <- read_sf("D:/geodata/soils/MLRA_52.shp") |> st_transform(5070)
 statsgo <- read_sf("D:/geodata/soils/wss_gsmsoil_US_[2016-10-13]/spatial/gsmsoilmu_a_us_aea.shp")
 
 mlra$m2     <- st_area(mlra)
+mlra$acres  <- units::set_units(mlra$m2, acres)
+
 statsgo$m2  <- st_area(statsgo)
 statsgo$cm2 <- units::set_units(statsgo$m2, cm^2)
+statsgo$acres <- units::set_units(statsgo$m2, acres)
+
+
+idx <- st_intersects(mlra, sapol) |> lapply(function(x) length(x) > 1) |> unlist()
 
 
 # SSURGO & STATSGO2 map scales
@@ -49,7 +57,7 @@ rf <- 1 / 24000
 
 
 ## minimum legible delineation ----
-mld_cm2 <- units::set_units(c(0.01, 0.1, 0.25, 0.40, 0.60), cm^2)
+mld_cm2 <- units::set_units(c(0.01, 0.1, 0.25, 0.40, 0.60, 1), cm^2)
 mld_m2  <- units::set_units(mld_cm2, m^2)
 mld_km2  <- units::set_units(mld_cm2, km^2)
 mld_ha  <- units::set_units(mld_cm2, ha)
@@ -58,7 +66,7 @@ mld_ac  <- units::set_units(mld_cm2, acre)
 
 ## scale nummber ----
 SN <- 24000
-SN2 <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 3500000, LRR = 7500000)
+
 
 sn <- function(MLA, MLD) {
 
@@ -70,17 +78,6 @@ sn <- function(MLA, MLD) {
   #   ((1 / RF)^2) / 2.5*10^8
   # }
 }
-
-p <- c(0, 0.05, 0.1, 0.5, 0.95, 1)
-sn(quantile(statsgo$m2, p), mld_m2[4])
-sn(quantile(mlra$m2, p), mld_m2[4])
-
-
-SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
-names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
-SN2 <- c(SN1, SN2)
-SN2
-
 
 
 # function of delineation size ----
@@ -189,6 +186,120 @@ signif(mean(sqrt(c(1, 4) * 1000^2/10) * 10^2), 1)
 round((1000^2 * 10^2^2) / 31622.78^2)
 
 format(signif((1000^2 * 10^2^2) / SN2^2, 3), scientific = FALSE)
+
+
+
+# Compare ----
+## SSM 1993 ----
+# Table 2-1
+SN_SSM_Table_2_1 <- c(order1 = 15840, order2 = c(12000, 31680), order3 = c(20000, 63360), order4 = c(63360, 250000), order5 = c(250000, 1000000))
+mla(SN_SSM_Table_2_1, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+# these values are exactly what is printed in the text, except for 1:250,000
+
+
+# Table 2-2
+SN_SSM_Table_2_2 <- c(500, 2000, 5000, 7920, 10000, 12000, 15840, 20000, 24000, 31680, 62500, 63360, 100000, 125000, 250000)
+mla(SN_SSM_Table_2_2, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+# these values are exactly what is printed in the text
+
+
+## SSM 2017 p.272-275 ----
+SN_SSM_Table_4_4 <- c(order1 = 15840, order2 = c(12000, 31680), order3 = c(20000, 63360), order4 = c(63360, 250000), order5 = c(250000, 1000000))
+mla(SN_SSM_Table_4_4, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+# these values are exactly what is printed in the text, except for 1:250,000
+
+
+
+## NSSH 648 1993 ----
+NSSH_648_1993 <- data.frame(
+  SN        = c(LRU = 250000, MLRA = 7500000, LLR = 10000000),
+  MLA_acres = c(LRU = NA,     MLRA = 1434803, LRR = NA)
+)
+NSSH_648_2017 |> 
+  cbind(
+    MLA_calc = mla(NSSH_648_1993$SN, mld_ac[6]) |> 
+      format(big.mark = ",", scientific = FALSE)
+    )
+# these values are close to what is printed in the text, using the 1 cm^2 MLD
+
+
+## NSSH 648 2017 ----
+NSSH_648_2017 <- data.frame(
+  SN = c(
+    SSURGO  = c(CONUS =   24000, AK =      NA),
+    STATSGO = c(CONUS =  250000, AK =  500000),
+    LRU     = c(CONUS = 1000000, AK = 5000000), 
+    MLRA    = c(CONUS = 5000000, AK = 7500000), 
+    LLR     = c(CONUS = 7500000, AK = 10000000)),
+  MLA_acres = c(
+    SSURGO  = c(       5, NA),
+    STATSGO = c(     623, NA),
+    LRU     = c(   10000, NA),     
+    MLRA    = c(  250000, NA), 
+    LRR     = c(  560000, NA)),
+  MMA_acres = c(
+    SSURGO  = c(      NA, NA),
+    STATSGO = c(    1000, NA),
+    LRU     = c(  100000, NA),
+    MLRA    = c( 1000000, NA), 
+    LRR     = c(20000000, NA))
+)
+NSSH_648_2017 |> 
+  cbind(
+    MLA_calc = mla(NSSH_648_2017$SN, mld_ac[4]) |> 
+      signif(2) |> 
+      format(big.makr = ", ", scientific = FALSE)
+    )
+# these values are close to what is printed in the text, using the 0.4 cm^2 MLD
+
+
+NSSH_648_2017 |> 
+  cbind(
+    MLA_calc = mla(NSSH_648_2017$SN, mld_ac[6]) |> 
+      signif(2) |> 
+      format(big.makr = ", ", scientific = FALSE)
+    )
+# these values are NOT close to what is printed in the text, using the 1 cm^2 MLD
+
+
+
+
+
+## Landing Page ----
+SN_LP <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 3500000, LRR = 7500000)
+mla(SN_LP, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+
+
+## rasters ----
+SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
+names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
+
+
+## Polygons ----
+p <- c(0, 0.05, 0.1, 0.5, 0.95, 1)
+
+
+### MLRA ----
+idx_conus_mlra <- st_intersects(mlra, sapol) |> 
+  lapply(function(x) length(x) > 1) |> 
+  unlist()
+
+sn(quantile(mlra$acres[idx_conus_mlra], p), mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+# 0.4 cm^2 the 0th percentile is close to the 1:7,500,000 quoted in the 1993 NSSH Part 648
+
+sn(quantile(mlra$acres[idx_conus_mlra], p), mld_ac[6]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+# 0.4 cm^2 the 0th percentile is close to the 1:7,500,000 quoted in the 1993 NSSH Part 648
+
+
+### STATSGO ----
+idx_conus_statsgo <- st_intersects(statsgo, sapol) |> 
+  lapply(function(x) length(x) > 1) |> 
+  unlist()
+
+sn(quantile(statsgo$acres[idx_conus_statsgo], p), mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+sn(quantile(statsgo$acres[idx_conus_statsgo], p), mld_ac[6]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+# 1 cm^2 the 5th percentile is close to the 1:7,500,000 quoted in the 1993 NSSH Part 648
+# the 0th percentile is close to the 1:5,000,000 quoted in the 2017 NSSH Part 648
 
 
 # table for printing ----
