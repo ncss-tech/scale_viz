@@ -1,8 +1,10 @@
--- http://www.umass.edu/landeco/research/fragstats/documents/Metrics/Shape%20Metrics/Metrics/P9%20-%20FRAC.htm
+-- Just some notes, this is done automatically on SoilWeb with each refresh
+--
+--
 
---
--- TODO: turn this into a parallel evaluation by areasymbol, save to new table
---
+
+
+-- http://www.umass.edu/landeco/research/fragstats/documents/Metrics/Shape%20Metrics/Metrics/P9%20-%20FRAC.htm
 
 
 SET search_path TO ssurgo, public;
@@ -230,4 +232,29 @@ ORDER BY fd DESC;
  la075      | 1598653 | 12391751 |  1.30658553466144 | -89.7032856849138 | 29.3826119763685
  
  
--- ... 
+
+-- polygons with >100k vertices
+
+SELECT areasymbol, mukey, ogc_fid,
+( 2.0 * LN(0.25 * ST_Perimeter(wkb_geometry::geography)) ) / ( LN(ST_Area(wkb_geometry::geography)) ) AS fd,
+ST_X(ST_PointOnSurface(wkb_geometry)), ST_Y(ST_PointOnSurface(wkb_geometry))
+FROM ssurgo.mapunit_poly 
+WHERE ogc_fid IN ('6739046','7891209','17981002','20634415','20634252','21280440','21242820','21452139','21468805','21508411','25375620') 
+ORDER BY fd DESC;
+
+
+ areasymbol |  mukey  | ogc_fid  |        fd        |       st_x        |       st_y
+------------+---------+----------+------------------+-------------------+------------------
+ oh161      | 2903473 | 25375620 | 1.48305886985374 | -84.5110824199522 |  40.848120713261
+ il019      | 242963  |  7891209 | 1.47047486606985 |  -88.452415136349 | 40.0320937879904
+ ms029      | 567699  | 17981002 | 1.42649188601696 | -90.2934305588956 | 31.8202510102259
+ ia149      | 410340  |  6739046 | 1.39709339429339 | -95.9715033845025 | 42.7300941524345
+ nd019      | 3247674 | 20634252 | 1.39499739452672 |  -98.856592183264 | 48.8431911123622
+ nd019      | 3247668 | 20634415 | 1.38967408635277 | -98.8046499406376 | 48.6615760313598
+ nd071      | 3247731 | 21242820 | 1.37048142153142 | -98.6269887653126 | 48.4876287436918
+ nd095      | 3247779 | 21508411 | 1.36807589479736 | -99.0060505782068 | 48.8928800252627
+ nd095      | 3247779 | 21468805 |  1.3668135990079 | -99.1801156615694 | 48.6998064541954
+ nd095      | 3247773 | 21452139 | 1.36645454839058 | -99.3420605643792 | 48.7256120470916
+ nd079      | 3247758 | 21280440 | 1.36126077977161 | -99.5978656882635 | 48.7089659658405
+
+
