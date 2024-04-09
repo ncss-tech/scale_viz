@@ -6,21 +6,19 @@ library(dplyr)
 library(sf)
 
 ssurgo <- read_sf("D:/geodata/soils/")
-ssa <- read_sf("D:/geodata/soils/gNATSGO_CONUS_Oct2023/gNATSGO_CONUS.gdb", layer = "SAPOLYGON")
+sapol <- read_sf("D:/geodata/soils/gNATSGO_CONUS_Oct2023/gNATSGO_CONUS.gdb", layer = "SAPOLYGON")
 
 mlra31    <- read_sf("D:/geodata/soils/mlra_v31_l48/mlra_v31_l48.shp") |> st_transform(5070)
 mlra52    <- read_sf("D:/geodata/soils/MLRA_52.shp") |> st_transform(5070)
 statsgo <- read_sf("D:/geodata/soils/wss_gsmsoil_US_[2016-10-13]/spatial/gsmsoilmu_a_us_aea.shp")
 
-mlra$m2     <- st_area(mlra)
-mlra$acres  <- units::set_units(mlra$m2, acres)
+mlra52$m2     <- st_area(mlra52)
+mlra52$acres  <- units::set_units(mlra52$m2, acres)
 
 statsgo$m2  <- st_area(statsgo)
 statsgo$cm2 <- units::set_units(statsgo$m2, cm^2)
 statsgo$acres <- units::set_units(statsgo$m2, acres)
 
-
-idx <- st_intersects(mlra, sapol) |> lapply(function(x) length(x) > 1) |> unlist()
 
 
 # SSURGO & STATSGO2 map scales
@@ -192,20 +190,40 @@ format(signif((1000^2 * 10^2^2) / SN2^2, 3), scientific = FALSE)
 # Compare ----
 ## SSM 1993 ----
 # Table 2-1
-SN_SSM_Table_2_1 <- c(order1 = 15840, order2 = c(12000, 31680), order3 = c(20000, 63360), order4 = c(63360, 250000), order5 = c(250000, 1000000))
-mla(SN_SSM_Table_2_1, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+SN_SSM_Table_2_1 <- data.frame(
+  SN = c(
+    order1 = 15840, 
+    order2 = c(12000, 31680), 
+    order3 = c(20000, 63360), 
+    order4 = c(63360, 250000), 
+    order5 = c(250000, 1000000)
+    ))
+SN_SSM_Table_2_1 |> 
+  cbind(
+    MLA = mla(SN_SSM_Table_2_1$SN, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+  )
 # these values are exactly what is printed in the text, except for 1:250,000
 
 
 # Table 2-2
-SN_SSM_Table_2_2 <- c(500, 2000, 5000, 7920, 10000, 12000, 15840, 20000, 24000, 31680, 62500, 63360, 100000, 125000, 250000)
-mla(SN_SSM_Table_2_2, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+SN_SSM_Table_2_2 <- data.frame(
+  SN = c(500, 2000, 5000, 7920, 10000, 12000, 15840, 20000, 24000, 31680, 62500, 63360, 100000, 125000, 250000)
+)
+SN_SSM_Table_2_2 |> 
+  cbind(
+    MLA = mla(SN_SSM_Table_2_2$SN, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+  )
 # these values are exactly what is printed in the text
 
 
 ## SSM 2017 p.272-275 ----
-SN_SSM_Table_4_4 <- c(order1 = 15840, order2 = c(12000, 31680), order3 = c(20000, 63360), order4 = c(63360, 250000), order5 = c(250000, 1000000))
-mla(SN_SSM_Table_4_4, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+SN_SSM_Table_4_4 <- data.frame(
+  SN = c(order1 = 15840, order2 = c(12000, 31680), order3 = c(20000, 63360), order4 = c(63360, 250000), order5 = c(250000, 1000000))
+)
+SN_SSM_Table_4_4 |>
+  cbind(
+    MLA = mla(SN_SSM_Table_4_4$SN, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+    )
 # these values are exactly what is printed in the text, except for 1:250,000
 
 
@@ -231,7 +249,7 @@ NSSH_648_1993 |>
 
 
 ## NSSH 648 2017 ----
-# this version has a typo, the 2024 corrected these numbers at 1 cm^2 except for the SSURGO dataset which should be 0.4 cm^2
+# this version has a typo, the 2024 corrected these numbers using 1 cm^2 except for the SSURGO dataset which should be 0.4 cm^2
 NSSH_648_2017 <- data.frame(
   SN = c(
     SSURGO  = c(CONUS =   24000, AK =      NA),
@@ -289,14 +307,17 @@ NSSH_648_2024 <- data.frame(
 )
 NSSH_648_2024 |> 
   cbind(
-    MLA_calc = mla(NSSH_648_2024$SN, mld_ac[6]) |> 
+    MLA_ha = mla(NSSH_648_2024$SN, mld_ha[6]) |> 
+      signif(2) |> 
+      format(big.makr = ", ", scientific = FALSE),
+    MLA_ac = mla(NSSH_648_2024$SN, mld_ac[6]) |> 
       signif(2) |> 
       format(big.makr = ", ", scientific = FALSE)
   )
 # these values are close to what is printed in the text, using the 1 cm^2 MLD
 # only the 
 
-NSSH_648_2017 |> 
+NSSH_648_2024 |> 
   cbind(
     MLA_calc = mla(NSSH_648_2017$SN, mld_ac[6]) |> 
       signif(2) |> 
@@ -321,14 +342,14 @@ p <- c(0, 0.05, 0.1, 0.5, 0.95, 1)
 
 
 ### MLRA ----
-idx_conus_mlra <- st_intersects(mlra, sapol) |> 
+idx_conus_mlra <- st_intersects(mlra52, sapol) |> 
   lapply(function(x) length(x) > 1) |> 
   unlist()
 
 sn(quantile(mlra$acres[idx_conus_mlra], p), mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
 # 0.4 cm^2 the 0th percentile is close to the 1:7,500,000 quoted in the 1993 NSSH Part 648
 
-sn(quantile(mlra$acres[idx_conus_mlra], p), mld_ac[6]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
+sn(quantile(mlra52$acres[idx_conus_mlra], p), mld_ac[6]) |> signif(2) |> format(big.mark = ",", scientific = FALSE)
 # 0.4 cm^2 the 0th percentile is close to the 1:7,500,000 quoted in the 1993 NSSH Part 648
 
 
