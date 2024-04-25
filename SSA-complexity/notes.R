@@ -70,7 +70,9 @@ summary(x$n_pts)
 # mukey = 2995023
 # https://casoilresource.lawr.ucdavis.edu/soil_web/list_components.php?mukey=2995023
 # https://casoilresource.lawr.ucdavis.edu/gmap/?loc=30.6060197088614,-88.279394644734
-knitr::kable(x[x$fd > 1.85, ], row.names = FALSE)
+knitr::kable(x[x$fd > 1.5, ], row.names = FALSE)
+
+
 
 
 # investigate records with VERY high fractal dimension

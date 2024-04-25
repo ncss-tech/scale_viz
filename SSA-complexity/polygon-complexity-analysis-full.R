@@ -60,6 +60,9 @@ soilDB::format_SQL_in_statement(z$ogc_fid)
 
 options(scipen = 20)
 
+
+
+
 p.1 <- hexbinplot(
   fd ~ n_pts, 
   data = x, 
