@@ -4,6 +4,7 @@
 library(soilDB)
 library(dplyr)
 library(sf)
+library(units)
 
 ssurgo <- read_sf("D:/geodata/soils/")
 sapol <- read_sf("D:/geodata/soils/gNATSGO_CONUS_Oct2023/gNATSGO_CONUS.gdb", layer = "SAPOLYGON")
@@ -55,7 +56,7 @@ rf <- 1 / 24000
 
 
 ## minimum legible delineation ----
-mld_cm2 <- units::set_units(c(0.01, 0.1, 0.25, 0.40, 0.60, 1), cm^2)
+mld_cm2 <- units::set_units(c(0.01, 0.1, 0.25, 0.40, 0.50, 1), cm^2)
 mld_m2  <- units::set_units(mld_cm2, m^2)
 mld_km2  <- units::set_units(mld_cm2, km^2)
 mld_ha  <- units::set_units(mld_cm2, ha)
@@ -66,10 +67,14 @@ mld_ac  <- units::set_units(mld_cm2, acre)
 SN <- 24000
 
 
-sn <- function(MLA, MLD) {
+sn <- function(ground, map, units = "area") {
 
+  # ground = MLA
+  # map    = MLD
+  
   # if (! is.null(MLA)) {
-    sqrt(MLA / MLD)
+  if (units == "area") sqrt(ground / map)
+  if (units == "distance") ground / map
   # }
   
   # if (!is.null(RF)) {
@@ -200,7 +205,7 @@ SN_SSM_Table_2_1 <- data.frame(
     ))
 SN_SSM_Table_2_1 |> 
   cbind(
-    MLA = mla(SN_SSM_Table_2_1$SN, mld_ha[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
+    MLA = mla(SN_SSM_Table_2_1$SN, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
   )
 # these values are exactly what is printed in the text, except for 1:250,000
 
@@ -366,7 +371,7 @@ sn(quantile(statsgo$acres[idx_conus_statsgo], p), mld_ac[6]) |> signif(2) |> for
 
 
 # table for printing ----
-SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
+SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]) * 2)
 names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
 
 SN2 <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 5000000, LRR = 7500000)
@@ -378,9 +383,9 @@ SN2
 i1 <- rep(1, 5)
 i2 <- rep(1, 2)
 i3 <- rep(1, 4)
-ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
-ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
-m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2], mld_ac[6][i3])) * c(i1 * 4, i2, i3)
+ac <- mla(SN2, c(mld_ac[1][i1], mld_ac[4][i2], mld_ac[6][i3])) * c(i1, i2, i3)
+ha <- mla(SN2, c(mld_ha[1][i1], mld_ha[4][i2], mld_ac[6][i3])) * c(i1, i2, i3)
+m2 <- mla(SN2, c(mld_m2[1][i1], mld_m2[4][i2], mld_ac[6][i3])) * c(i1, i2, i3)
 m  <- signif(sqrt(as.numeric(m2)), 2) / (c(i1,  i2, i3) * 2)
 df <- data.frame(
   SN = signif(as.numeric(SN2), 2), 
