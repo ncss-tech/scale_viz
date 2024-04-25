@@ -51,7 +51,7 @@ mapview(mu.bbox, zcol = 'fd', alpha.regions = 0.25, color = 'black', lwd = 0.5)
 
 
 ## get a collection for comparison
-mu.summary <- MUspatialSummary(c('1865918', '456137', '162786', '403308', '2534946'), method='bbox')
+mu.summary <- MUspatialSummary(c('1865918', '456137', '162786', '403308', '2534946'), method = 'bbox')
 
 ## TODO: these aren't populated as often as we would like
 # map unit / survey order
