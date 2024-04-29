@@ -73,13 +73,14 @@ sn <- function(ground, map, units = "area") {
   # map    = MLD
   
   # if (! is.null(MLA)) {
-  if (units == "area") sqrt(ground / map)
-  if (units == "distance") ground / map
+  if (units == "area") sn = sqrt(ground / map)
+  if (units == "distance") sn = ground / map
   # }
   
   # if (!is.null(RF)) {
   #   ((1 / RF)^2) / 2.5*10^8
   # }
+  return(sn)
 }
 
 
@@ -124,6 +125,27 @@ sci <- function(perimeter, area) {
 
 
 asd(statsgo$cm2 * 10000, nrow(statsgo))
+
+
+
+# function of location accuracy ----
+# FGDC-STD-007.3-1998 
+# horizontal map accuracy (m)
+# does corresponds to the vertex density standard of 15-meters in the NSSH 647?
+12000 * units::set_units(1/30, inch) |> units::set_units(m)
+12000 * 1/30 * 0.0254
+12000 * 0.0008466667
+15840 * units::set_units(1/30, inch) |> units::set_units(m)
+15840 * 1/30 * 0.0254
+24000 * units::set_units(1/50, inch) |> units::set_units(m)
+24000 * 1/50 * 0.0254
+24000 * 0.000508
+
+
+# SN
+1/(0.0008466667) 
+1/(0.000508) 
+1/(1/30 *0.0254)
 
 
 # function of inspection density ----
