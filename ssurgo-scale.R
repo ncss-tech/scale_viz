@@ -493,3 +493,50 @@ test |>
   facet_wrap(~projectscale) +
   ggtitle("Map unit Entropy by Survey Order, Map Scale and Decade")
 
+
+# survey area complexity
+test <- le |>
+  inner_join(mu, by = "areasymbol") |>
+  group_by(decade, mukind) |>
+  summarize(n = length(mukey)) |>
+  ungroup()
+
+ggplot(test, aes(y = n, x = decade, col = mukind)) + 
+  geom_line(size = 2) +
+  ggtitle("Trend in Map Unit Kind by Decade")
+
+
+test <- le |>
+  inner_join(mu, by = "areasymbol") |>
+  group_by(decade, mukind, projectscale) |>
+  summarize(n = length(mukey)) |>
+  ungroup()
+
+test_N <- test |>
+  group_by(decade, projectscale) |>
+  summarize(N = sum(n)) |>
+  ungroup()
+
+test2 <- test |>
+  left_join(test_N, by = c("decade", "projectscale")) |>
+  mutate(pct = round(n / N * 100))
+
+
+test2 |>
+  filter(projectscale %in% c(12000, 15840, 24000) & !is.na(mukind)) |>
+  ggplot(aes(y = n, x = decade, col = mukind)) + 
+  geom_line(size = 2) +
+  facet_wrap(~projectscale) +
+  ylab("Count (n)") +
+  ggtitle("Trend in Map Unit Kind by Decade")
+
+
+test2 |>
+  filter(projectscale %in% c(12000, 15840, 24000) & !is.na(mukind)) |>
+  ggplot(aes(y = pct, x = decade, col = mukind)) + 
+  geom_line(size = 2) +
+  facet_wrap(~projectscale) +
+  ylab("percent (%)") +
+  ggtitle("Trend in Map Unit Kind by Decade")
+
+
