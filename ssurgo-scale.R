@@ -2,6 +2,7 @@
 library(soilDB)
 library(sf)
 library(rmapshaper)
+library(dplyr)
 
 
 # load data ----
@@ -16,6 +17,8 @@ sapol$acres <- st_area(sapol) |> units::set_units(acres)
 
 ## legend ----
 le <- get_legend_from_SDA(WHERE = "areasymbol LIKE '%'")
+le <- get_legend_from_GDB(dsn = "D:/geodata/soils/gSSURGO_CONUS_Oct2023/gSSURGO_CONUS.gdb")
+
 le$mla <- le$projectscale^2 * 0.4 |> units::set_units("cm^2") |> units::set_units("acres") |> as.numeric()
 st <- substr(le$areasymbol, 1, 2) |> unique()
 
@@ -253,8 +256,9 @@ mupol_stats_gdb <- lapply(sort(sapol$AREASYMBOL), function(x) {
 })
 
 mupol_stats_gdb <- data.table::rbindlist("rbind", mupol_stats_gdb)
-# data.table::fwrite(mupol_stats_gdb, "mupol_stats_gdb.csv")
-mupol_stats_gdb <- data.table::fread("mupol_stats_gdb.csv")
+fp <- file.path("D:/geodata/soils/gSSURGO_CONUS_Oct2023")
+# data.table::fwrite(mupol_stats_gdb, file.path(fp, "mupol_stats_gdb.csv"))
+mupol_stats_gdb <- data.table::fread(file.path(fp, "mupol_stats_gdb.csv"))
 
 
 
@@ -262,7 +266,7 @@ mupol_stats_gdb <- data.table::fread("mupol_stats_gdb.csv")
 pat <- "^water$|^water,|^water |^water-riverwash|^water-perennial" #^water-|-water-|-water "
 mu2 <- mu |>
   mutate(mu_water = grepl(pat, tolower(mu$muname)))
-table(mu2$muname[mu2$majcompflag_w > 0 | grepl(pat, tolower(mu2$muname))]) |> 
+table(mu2$muname[mu2$mu_water > 0 | grepl(pat, tolower(mu2$muname))]) |> 
   sort(decreasing = TRUE)
 
 
@@ -288,14 +292,23 @@ co_ma_mukey <- co |>
   ) |>
   ungroup() |>
   inner_join(select(mu2, mukey, musym, muname, mukind, mu_water), by = "mukey") |>
-  mutate(compkind_dom_mukind = paste0(compkind_dom, "-", tolower(mukind)))
+  mutate(
+    mukey    = as.integer(mukey),
+    compkind_dom_mukind = paste0(compkind_dom, "-", tolower(mukind))
+    )
 
 
-mupol_stats_gdb <- mupol_stats_gdb |>
-  inner_join(co_ma_mukey, by = c("mukey", "musym"))
+mupol_stats_gdb2 <- mupol_stats_gdb |>
+  inner_join(co_ma_mukey, by = c("mukey", "musym")) |>
+  inner_join(
+    select(mu, mukey, lkey) |> 
+      mutate(mukey = as.integer(mukey)), 
+    by = "mukey"
+    ) |>
+  inner_join(select(le, lkey, mla), by = "lkey")
 
 
-test <- mupol_stats_gdb |>
+test <- mupol_stats_gdb2 |>
   filter(border == FALSE) |>
   group_by(areasymbol) |>
    summarize(
@@ -381,6 +394,18 @@ test |>
     lt_acre_ma = mean(pct_mla_ma, na.rm = TRUE) / sum(n_mupolygonkey),
     lt_acre_w  = mean(pct_mla_w,  na.rm = TRUE) / sum(n_mupolygonkey)
   )
+
+fn <- function(x) {
+  x2 = fivenum(x) 
+  x2 = c(Min = x2[1], `1st Qu.` = x2[2], Median = x2[3], Mean = mean(x), `3rd Qu.` = x2[4], Max = x2[5]) 
+  return(x2)}
+test2 <- apply(test[grepl("pct_mla|n_mla", names(test))], 2, fn) |> as.data.frame()
+idx <- grepl("n_", names(test2))
+test2[idx] <- round(test2[idx])
+idx <- grepl("pct_", names(test2))
+test2[idx] <- round(test2[idx], 2)
+test2 |> View()
+
 
 test_agg <- aggregate(. ~ areasymbol, data = test[-c("areasymbol")], quantile)
 
