@@ -8,10 +8,17 @@ library(units)
 
 ssurgo <- read_sf("D:/geodata/soils/")
 sapol <- read_sf("D:/geodata/soils/gNATSGO_CONUS_Oct2023/gNATSGO_CONUS.gdb", layer = "SAPOLYGON")
+sapol <- within(sapol, {
+  m2 = st_area(sapol)
+  acres = units::set_units(m2, "acres")
+})
+sapol_tot <- sapol |> group_by(AREASYMBOL) |> summarize(acres = sum(acres, na.rm = TRUE))
 
-mlra31    <- read_sf("D:/geodata/soils/mlra_v31_l48/mlra_v31_l48.shp") |> st_transform(5070)
-mlra52    <- read_sf("D:/geodata/soils/MLRA_52.shp") |> st_transform(5070)
-statsgo <- read_sf("D:/geodata/soils/wss_gsmsoil_US_[2016-10-13]/spatial/gsmsoilmu_a_us_aea.shp")
+
+mlra31    <- read_sf("D:/geodata/soils/MLRA/mlra_v31_l48/mlra_v31_l48.shp") |> st_transform(5070)
+mlra52    <- read_sf("D:/geodata/soils/MLRA/MLRA_52.shp") |> st_transform(5070)
+statsgo <- read_sf("D:/geodata/soils/STATSGO2/wss_gsmsoil_US_[2016-10-13]/spatial/gsmsoilmu_a_us.shp") |>
+  st_transform(crs = 5070)
 
 mlra52$m2     <- st_area(mlra52)
 mlra52$acres  <- units::set_units(mlra52$m2, acres)
@@ -24,7 +31,7 @@ statsgo$acres <- units::set_units(statsgo$m2, acres)
 
 # SSURGO & STATSGO2 map scales
 le <- get_legend_from_SDA(WHERE = "areasymbol LIKE '%'")
-mu <- get_mapunit_from_GDB(dsn = "D:/geodata/soils/gSSURGO_CONUS_202210.gdb") 
+mu <- get_mapunit_from_GDB(dsn = "D:/geodata/soils/gSSURGO_CONUS/gSSURGO_CONUS.gdb") 
 
 sso <- mu %>%
   group_by(areasymbol, invesintens) %>%
