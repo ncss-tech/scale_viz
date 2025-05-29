@@ -5,7 +5,7 @@ library(terra)
 library(soilDB)
 
 
-x <- read.csv('fractal-dimension-test.csv.gz')
+x <- read.csv('fractal-dimension-samples.csv.gz')
 x$invesintens <- factor(x$invesintens, levels = c('missing', 'Order 1', 'Order 2', 'Order 3', 'Order 4', 'Order 5'))
 
 y <- read.csv('entropy-by-mukey.csv.gz')
@@ -13,11 +13,11 @@ y <- read.csv('entropy-by-mukey.csv.gz')
 z <- merge(x, y[, c('mukey', 'mukind', 'entropy')], by = 'mukey', all.x = TRUE, sort = FALSE)
 head(z)
 
-z <- z[which(z$entropy > 0), ]
+z <- z[which(z$entropy > 0 & z$fd > 0), ]
 
 
 # figure elements and style
-.fy <- '2024'
+.fy <- '2025'
 .title <- sprintf('FY%s SSURGO\n100k Samples', .fy)
 .cp <- hcl.colors(100, 'zissou1')
 .cpf <- colorRampPalette(.cp)
