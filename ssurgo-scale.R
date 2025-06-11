@@ -256,7 +256,7 @@ mupol_stats_gdb <- lapply(sort(sapol$AREASYMBOL), function(x) {
 })
 
 mupol_stats_gdb <- data.table::rbindlist("rbind", mupol_stats_gdb)
-fp <- file.path("D:/geodata/soils/gSSURGO_CONUS_Oct2023")
+fp <- file.path("D:/geodata/soils/SSURGO/SSURGO_CONUS_20231001")
 # data.table::fwrite(mupol_stats_gdb, file.path(fp, "mupol_stats_gdb.csv"))
 mupol_stats_gdb <- data.table::fread(file.path(fp, "mupol_stats_gdb.csv"))
 

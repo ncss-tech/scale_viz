@@ -102,8 +102,6 @@ formatC(mla(SN2, mld_ac[4]), format)
 mla(20000, mld_m2)
 mla(24000, mld_m2)
 mla(24000, mld_ac)
-
-mla(24000, mld_ac)
 mla(24000, mld_cm2[4])
 
 
@@ -367,7 +365,7 @@ mla(SN_LP, mld_ac[4]) |> signif(2) |> format(big.mark = ",", scientific = F)
 
 
 ## rasters ----
-SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
+SN1 <- as.numeric(sn(c(5, 10, 30, 100, 1000)^2, mld_m2[1]))
 names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
 
 
@@ -400,7 +398,7 @@ sn(quantile(statsgo$acres[idx_conus_statsgo], p), mld_ac[6]) |> signif(2) |> for
 
 
 # table for printing ----
-SN1 <- as.numeric(sn(MLA = c(5, 10, 30, 100, 1000)^2, mld_m2[1]) * 2)
+SN1 <- as.numeric(sn(c(5, 10, 30, 100, 1000)^2, mld_m2[1]) * 2)
 names(SN1) <- c("5-meter", "10-meter", "30-meter", "100-meter", "1-kilometer")
 
 SN2 <- c(`SSURGO` = 12000, `SSURGO` = 24000, STATSGO = 250000, LRU = 1000000, MLRA = 5000000, LRR = 7500000)
