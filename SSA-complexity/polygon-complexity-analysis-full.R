@@ -47,7 +47,7 @@ soilDB::format_SQL_in_statement(z$ogc_fid)
 
 
 
-.fy <- '2024'
+.fy <- '2025'
 
 
 
