@@ -255,19 +255,23 @@ sum(ssurgo_mu$n, na.rm = TRUE) |> formatC(big.mark = ",", format = "fg")
 sso_n <- ssurgo_mu |>
   group_by(lkey) |>
   summarize(n = sum(n, na.rm = TRUE)) |>
-  ungroup()
-sso_n <- merge(sapol, sso_n, by = "lkey", all.y = TRUE) |>
+  ungroup() |>
+  inner_join(ssurgo_le, by = "lkey")
+sso_n <- merge(sapol, sso_n, by = c("lkey", "areasymbol"), all.y = TRUE) |>
   subset(substr(areasymbol, 1, 2) %in% conus) |>
+  within({
+    n_10K = n / areaacres * 10000
+  }) |>
   st_transform(crs = 5070)
-brks <- quantile(sso_n$n, probs = seq(0, 1, 0.25))
+brks <- quantile(sso_n$n_10K, probs = seq(0, 1, 0.25))
 brks <- c(0, 2000, 3000, 5000, 10000, 27000)
 lbls  <- paste0(
   formatC(brks, big.mark = ",", format = "fg"), 
   " to ", 
   formatC(brks[-1]-1, big.mark = ",", format = "fg"
   )
-)[-6]
-sso_n$n <- cut(sso_n$n, breaks = brks, labels = lbls, right = FALSE)
+)[-5]
+sso_n$n <- cut(sso_n$n_10K, breaks = brks, labels = lbls, right = FALSE)
 
 ggplot(sso_n) +
   geom_sf(aes(fill = n)) +
@@ -280,7 +284,7 @@ ggplot(sso_n) +
         panel.background = element_blank(),
         axis.text = element_blank(), 
         axis.ticks = element_blank()) +
-  ggtitle("Estimated sample size (n) required per soil survey area")
+  ggtitle("Estimated sample size (n) per 10,000 acres required per soil survey area")
 
 
 
@@ -555,6 +559,101 @@ gridExtra::arrangeGrob(gg_n_mla, gg_pct_mla, nrow = 1, top = "Polygons smaller t
 dev.off()
 
 
+# completeness ----
+test <- ssurgo_co |>
+  # component aggregation
+  left_join(ssurgo_h, by = "cokey") |>
+  group_by(mukey, cokey) |>
+  summarize(
+    n_co = 1,
+    n_co_ch_mis = (
+      sum(hzdepb_r, na.rm = TRUE) < 1
+      | all(is.na(hzdept_r))
+      ) & (
+        compkind[1] != "Miscellaneous area" 
+        # | is.na(compkind[1])
+        ),
+    
+    pct_co        = comppct_r[1]/100,
+    pct_co_ch_mis = comppct_r[1]/100 * n_co_ch_mis
+    ) |>
+  ungroup() |>
+  # map unit aggregation
+  right_join(ssurgo_mu, by = "mukey") |>
+  group_by(lkey, mukey) |>
+  summarize(
+    muacres           = muacres[1],
+    muacres_NOTCOM    = sum(muacres * (musym == "NOTCOM"), na.rm = TRUE),
+    muacres_co_ch_mis = sum(muacres *  pct_co_ch_mis,      na.rm = TRUE),
+    
+    pct_co         = sum(muacres * pct_co, na.rm = TRUE) / muacres,
+    muacres_co_ch_mis = ifelse(
+      pct_co < 1,
+      muacres_co_ch_mis + sum(muacres * (1 - pct_co), na.rm = TRUE),
+      muacres_co_ch_mis
+    ),
+    muacres_co_ch_mis = ifelse(
+      muacres_NOTCOM > 0,
+      muacres_NOTCOM,
+      muacres_co_ch_mis
+      ),
+
+    n_co           = sum(n_co,              na.rm = TRUE),
+    n_NOTCOM       = sum(musym == "NOTCOM", na.rm = TRUE),
+    n_co_ch_mis    = sum(n_co_ch_mis,       na.rm = TRUE),
+    n_co_ch_mis    = ifelse(!is.na(n_NOTCOM), NA, n_co_ch_mis),
+
+    pct_co_ch_mis  = muacres_co_ch_mis / muacres
+    ) |>
+  ungroup() |>
+  # legend aggregation
+  right_join(ssurgo_le, by = "lkey") |>
+  group_by(lkey) |>
+  summarize(
+    n_co              = sum(n_co,              na.rm = TRUE),
+    n_NOTCOM          = sum(n_NOTCOM,          na.rm = TRUE),
+    n_co_ch_mis       = sum(n_co_ch_mis,       na.rm = TRUE),
+    
+    muacres_co_ch_mis = sum(muacres_co_ch_mis, na.rm = TRUE),
+    muacres_NOTCOM    = sum(muacres_NOTCOM,    na.rm = TRUE),
+    muacres           = sum(muacres,           na.rm = TRUE),
+    
+    pct_co_ch_mis     = muacres_co_ch_mis / muacres
+  ) |>
+  ungroup()
+
+
+quantile(test$pct_co_ch_mis * 100, probs = seq(0, 1, 0.1), na.rm = TRUE) |> round()
+pct_brks <- c(0, 0.02, 0.05, 0.15, 0.25, 1)
+pct_lbls <- c("0 to 1", "2 to 4", "5 to 14", "15 to 24", "25 to 100")
+
+n_brks <- c(0, 1, 100, 200, 350, 4000)
+n_lbls <- c("0 to 0.99", "1 to 99", "100 to 199", "200 to 349", "350 to 4000")
+
+
+sapol |>
+  left_join(test, by = "lkey") |>
+  subset(
+    substr(areasymbol, 1, 2) %in% conus
+    & muacres != muacres_NOTCOM
+    ) |>
+  transform(
+    `percent (%)` = cut(pct_co_ch_mis, breaks = pct_brks, labels = pct_lbls, right = FALSE)
+    ) |>
+  st_transform(crs = 5070) |>
+  ggplot() +
+  geom_sf(aes(fill = `percent (%)`)) +
+  scale_fill_viridis_d() +
+  coord_sf(crs = st_crs(5070)) +
+  geom_sf(data = stpol, fill = NA, lwd = 0.25, col = "white") +
+  ggtitle("Percent acreage of soil components with missing horizon data")  +
+  theme(panel.background = element_blank(),
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12)
+  )
+dev.off
 
 # accuracy ----
 ssurgo_mu_acc <- ssurgo_co |>

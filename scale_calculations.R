@@ -93,7 +93,7 @@ sn <- function(ground, map, units = "area") {
 
 # function of delineation size ----
 
-## minimum legible area ----
+## minimum legible area (MLA) ----
 mla <- function(SN, MLD) {
   SN^2 * MLD
 }
