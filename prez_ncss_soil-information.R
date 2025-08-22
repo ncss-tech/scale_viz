@@ -22,7 +22,7 @@ conus_sn  <- state.name[conus_idx]
 # stpol <- read_sf("D:/geodata/government_units/GovernmentUnits_National_GPKG.gpkg", layer = "GU_CountyOrEquivalent")
 # stpol_conus <- subset(stpol, STATE_NAME %in% conus_sn)
 stpol <- us_states()
-stpol <- subset(stpol, stusps %in% conus) |>
+stpol <- subset(stpol, stusps %in% conus_abb) |>
   st_transform(crs = 5070)
   
 
@@ -180,7 +180,7 @@ test <- ssurgo_mu |>
   ungroup()
 test <- left_join(sapol, test, by = "lkey")
 test |>
-  filter(substr(areasymbol, 1, 2) %in% conus) |>
+  filter(substr(areasymbol, 1, 2) %in% conus_abb) |>
   subset(!is.na(`Soil Survey`)) |>
   # mutate(`Soil Survey` = droplevels(`Soil Survey`)) |>
   st_transform(crs = 5070) |>
@@ -199,9 +199,9 @@ test |>
 
 
 ### survey area complexity ----
-filter(ssurgo_le3, !is.na(sso)  & sso != "Order 1") |>
-  mutate(sso = as.factor(sso)) |>
-  ggplot(aes(y = n_mukey / areaacres, x = as.factor(projectscale/1000), fill = sso)) + 
+filter(ssurgo_le3, !is.na(sso_dom)  & sso_dom != "Order 1") |>
+  mutate(sso = as.factor(sso_dom)) |>
+  ggplot(aes(y = n_mukey / areaacres, x = as.factor(projectscale/1000), fill = sso_dom)) + 
   geom_boxplot() + 
   # facet_grid(~sso) +
   # ylim(0, 5) +
@@ -219,7 +219,7 @@ brks <- c(0, 1, 2, 4, 8, 16, 120)
 test$`n mapunits / \n 10K acres` <- cut(test$n_mukey_aa, breaks = brks)
 
 test |>
-  filter(substr(areasymbol, 1, 2) %in% conus) |>
+  filter(substr(areasymbol, 1, 2) %in% conus_abb) |>
   ggplot() +
   geom_sf(aes(fill = `n mapunits / \n 10K acres`)) + #, lty = NA)) +
   scale_fill_viridis_d() +
@@ -257,8 +257,13 @@ sso_n <- ssurgo_mu |>
   summarize(n = sum(n, na.rm = TRUE)) |>
   ungroup() |>
   inner_join(ssurgo_le, by = "lkey")
-sso_n <- merge(sapol, sso_n, by = c("lkey", "areasymbol"), all.y = TRUE) |>
-  subset(substr(areasymbol, 1, 2) %in% conus) |>
+sso_n <- sapol |>
+  mutate(lkey = as.integer(LKEY),
+         LKEY = NULL
+         ) |>
+  rename(areasymbol = AREASYMBOL) |>
+  merge(sso_n, by = c("lkey", "areasymbol"), all.y = TRUE) |>
+  subset(substr(areasymbol, 1, 2) %in% conus_abb) |>
   within({
     n_10K = n / areaacres * 10000
   }) |>
@@ -271,12 +276,12 @@ lbls  <- paste0(
   formatC(brks[-1]-1, big.mark = ",", format = "fg"
   )
 )[-5]
-sso_n$n <- cut(sso_n$n_10K, breaks = brks, labels = lbls, right = FALSE)
+sso_n$n <- cut(sso_n$n, breaks = brks, labels = lbls, right = FALSE)
 
 ggplot(sso_n) +
   geom_sf(aes(fill = n)) +
-  # scale_fill_viridis_c(transform = "log") +
-  scale_fill_viridis_d() +
+  scale_fill_viridis_c(transform = "log") +
+  # scale_fill_viridis_d() +
   coord_sf(crs = st_crs(5070)) +
   geom_sf(data = stpol, fill = NA, lwd = 0.25, col = "white") +
   theme(legend.position = "right", 
@@ -299,11 +304,11 @@ sapol <- read_sf(dsn, layer = "SAPOLYGON") |>
   rmapshaper::ms_simplify()
 sapol$acres <- st_area(sapol) |> units::set_units(acres)
 
-le <- get_legend_from_GDB(dsn = dsn, stats = TRUE)
+le <- soilDB::get_legend_from_GDB(dsn = dsn, stats = TRUE)
 le$mla <- le$projectscale^2 * 0.4 |> units::set_units("cm^2") |> units::set_units("acres") |> as.numeric()
 
-mu <- get_mapunit_from_GDB(dsn = dsn, stats = TRUE)
-co <- get_component_from_GDB(dsn = dsn)
+mu <- soilDB::get_mapunit_from_GDB(dsn = dsn, stats = TRUE)
+co <- soilDB::get_component_from_GDB(dsn = dsn)
 
 mupol_stats_gdb <- lapply(sort(sapol$AREASYMBOL), function(x) {
   
@@ -473,6 +478,7 @@ test |>
     lt_acre_ma = mean(pct_mla_ma, na.rm = TRUE) / sum(n_mupolygonkey),
     lt_acre_w  = mean(pct_mla_w,  na.rm = TRUE) / sum(n_mupolygonkey)
   )
+sso_mla <- test
 
 fn <- function(x) {
   x2 = fivenum(x) 
@@ -486,7 +492,7 @@ test2[idx] <- round(test2[idx], 2)
 test2 |> View()
 
 
-test_agg <- aggregate(. ~ areasymbol, data = test[-c("areasymbol")], quantile)
+test_agg <- aggregate(. ~ areasymbol, data = test, quantile)
 
 
 
@@ -631,17 +637,22 @@ n_brks <- c(0, 1, 100, 200, 350, 4000)
 n_lbls <- c("0 to 0.99", "1 to 99", "100 to 199", "200 to 349", "350 to 4000")
 
 
-sapol |>
+sso_mis <- sapol |>
+  mutate(
+    lkey = as.integer(LKEY),
+    LKEY = NULL
+    ) |>
   left_join(test, by = "lkey") |>
   subset(
-    substr(areasymbol, 1, 2) %in% conus
+    substr(AREASYMBOL, 1, 2) %in% conus_abb
     & muacres != muacres_NOTCOM
     ) |>
   transform(
     `percent (%)` = cut(pct_co_ch_mis, breaks = pct_brks, labels = pct_lbls, right = FALSE)
     ) |>
-  st_transform(crs = 5070) |>
-  ggplot() +
+  st_transform(crs = 5070)
+
+ggplot(sso_mis) +
   geom_sf(aes(fill = `percent (%)`)) +
   scale_fill_viridis_d() +
   coord_sf(crs = st_crs(5070)) +
@@ -676,21 +687,23 @@ ssurgo_le_acc <- ssurgo_mu_acc |>
     oa = sum(comppct_r_max_muacres, na.rm = TRUE) / sum(muacres, na.rm = TRUE)
   ) |>
   ungroup()
-ssurgo_le_acc <- merge(sapol, ssurgo_le_acc, by = "lkey", all.x = TRUE)
+ssurgo_le_acc <- merge(sapol, ssurgo_le_acc, by.x = "LKEY", by.y = "lkey", all.x = TRUE)
 
 
 brks <- c(0, 0.5, 0.75, 0.9, 1)
 idx <- length(brks)
 lbls  <- paste0(brks[-idx], " to ", brks[-1]) 
 
-ssurgo_le_acc |>
+ssurgo_le_acc <- ssurgo_le_acc |>
   subset(
-    substr(areasymbol, 1, 2) %in% conus 
+    substr(AREASYMBOL, 1, 2) %in% conus_abb 
     ) |>
   transform(`Overall accuracy` = cut(oa, breaks = brks, labels = lbls, right = FALSE)) |>
   subset(!is.na(`Overall accuracy`)) |>
   mutate(`Overall accuracy` = droplevels(`Overall accuracy`)) |>
-  st_transform(crs = 5070) |>
+  st_transform(crs = 5070)
+
+ssurgo_le_acc |>
   ggplot() +
   geom_sf(aes(fill = `Overall accuracy`)) +
   scale_fill_viridis_d() +
@@ -708,7 +721,7 @@ ssurgo_le_acc |>
 
 
 ssurgo_le_acc |>
-  subset(substr(areasymbol, 1, 2) %in% conus) |>
+  subset(substr(AREASYMBOL, 1, 2) %in% conus_abb) |>
   transform(`Average user accuracy` = cut(ua_avg, breaks = brks, labels = lbls)) |>
   ggplot() +
   geom_sf(aes(fill = `Average user accuracy`)) +
@@ -772,8 +785,9 @@ samp_var <- function(x) unlist(x) |> new_p(type = "continuous") |> summ_var()
 
 x3 <- ssurgo_h[idx_lrh, paste0("claytotal", c("_l", "_r", "_h"))]
 
+st <- c("NE", "ND", "SD", "MN", "IA", "WI", "MO", "MI", "IN", "IL", "KS", "OH")
 ssurgo_h_wi <- ssurgo_le[c("lkey", "areasymbol")] |>
-  filter(substr(areasymbol, 1, 2) == "CO") |>
+  filter(substr(areasymbol, 1, 2) %in% st) |>
   inner_join(ssurgo_mu[c("mukey", "lkey", "muacres")],  by = "lkey") |>
   inner_join(ssurgo_co[c("cokey", "mukey", "comppct_r")], by = "mukey") |>
   inner_join(ssurgo_h, by = "cokey") |>
@@ -792,14 +806,14 @@ test_wi <- future_apply(ssurgo_h_wi[idx_lrh < 1, vars],  1, samp_p, simplify = F
 # test    <- future_apply(x3,         1, samp_p, simplify = FALSE)
 plan(sequential)
 
-# saveRDS(test, "ssurgo_h_samp-density.rds")
-ssurgo_h_samp <- readRDS("ssurgo_h_samp-density.rds")
-
 ssurgo_h_samp <- test_wi
+# saveRDS(test_wi, "ssurgo_h_samp-density_hl.rds")
+ssurgo_h_samp <- readRDS("ssurgo_h_samp-density_hl.rds")
+
 ssurgo_h_samp <- do.call("rbind", ssurgo_h_samp)
 
 apply(ssurgo_h_samp, 1, sd) |> summary()
-ssurgo_h_samp_l <- ssurgo_h_samp |> t() |> as.data.frame() |> utils::stack()
+ssurgo_h_samp_l  <- ssurgo_h_samp |> t() |> as.data.frame() |> utils::stack()
 ssurgo_h_wi_samp <- merge(ssurgo_h_wi, ssurgo_h_samp_l, by.x = "id", by.y = "ind", all.x = TRUE, sort = FALSE)
 
 ssurgo_h_wi_samp$test <- ssurgo_h_wi_samp$value 
@@ -809,17 +823,17 @@ ssurgo_h_wi_samp <- ssurgo_h_wi_samp |>
     mukey = as.factor(mukey)
   })
 
-as <- unique(ssurgo_h_wi_samp$areasymbol)
+as <- unique(ssurgo_h_wi_samp$areasymbol) |> sort()
 
 test_l <- lapply(as, function(x) {
   cat("fitting", x, as.character(Sys.time()), "\n")
   
   dat <- ssurgo_h_wi_samp[ssurgo_h_wi_samp$areasymbol == x, ]
-  test_lm <- lm(test ~ mukey, data = dat, weights = wt, y = TRUE)
-  
-  pred <- test_lm$fitted.values
-  obs  <- test_lm$y
-  dat2 <- data.frame(obs, pred, wt = test_lm$weights)
+  # test_lm <- lm(test ~ mukey, data = dat, weights = wt, y = TRUE)
+  # 
+  # pred <- test_lm$fitted.values
+  # obs  <- test_lm$y
+  # dat2 <- data.frame(obs, pred, wt = test_lm$weights)
   
   # des <- svydesign(id = ~ mukey, weights = ~wt, data = dat)
   # test_svylm <- svyglm(log10(test) ~ mukey, design = des)
@@ -827,12 +841,44 @@ test_l <- lapply(as, function(x) {
   # pred <- 10^test_svylm$y
   
   # dat$pred <- predict(test_lm, newdata = dat, na.action = na.pass)^2
-  R2   <- yardstick::rsq_trad(dat2, truth = obs, estimate = pred, case_weights = wt)
-  RMSE <- yardstick::rmse(    dat2, truth = obs, estimate = pred, case_weights = wt)
-  MAE  <- yardstick::mae(     dat2, truth = obs, estimate = pred, case_weights = wt)
+  # R2   <- yardstick::rsq_trad(dat2, truth = obs, estimate = pred, case_weights = wt)
+  # RMSE <- yardstick::rmse(    dat2, truth = obs, estimate = pred, case_weights = wt)
+  # MAE  <- yardstick::mae(     dat2, truth = obs, estimate = pred, case_weights = wt)
+
+  R2   <- yardstick::rsq_trad(dat, truth = test, estimate = claytotal_r, case_weights = wt)
+  RMSE <- yardstick::rmse(    dat, truth = test, estimate = claytotal_r, case_weights = wt)
+  MAE  <- yardstick::mae(     dat, truth = test, estimate = claytotal_r, case_weights = wt)
   
-  return(list(R2 = R2$.estimate, RMSE = RMSE$.estimate, MAE = MAE$.estimate))
+    
+  ASYM <- x
+  
+  return(list(R2 = R2$.estimate, RMSE = RMSE$.estimate, MAE = MAE$.estimate, ASYM = ASYM))
 })
+future::plan(future::multisession, workers = 12)
+test_l <- future_tapply(ssurgo_h_wi_samp, ssurgo_h_wi_samp$areasymbol, function(dat) {
+  
+  R2   <- yardstick::rsq_trad(dat, truth = test, estimate = claytotal_r, case_weights = wt)
+  RMSE <- yardstick::rmse(    dat, truth = test, estimate = claytotal_r, case_weights = wt)
+  MAE  <- yardstick::mae(     dat, truth = test, estimate = claytotal_r, case_weights = wt)
+  ASYM <- dat$areasymbol
+  
+  return(list(R2 = R2$.estimate, RMSE = RMSE$.estimate, MAE = MAE$.estimate, ASYM = ASYM))
+})
+plan(sequential)
+test_l <- ssurgo_h_wi_samp |>
+  as.data.table()
+test_l <- test_l[, .(
+  R2   = yardstick::rsq_trad_vec(truth = test, estimate = claytotal_r, case_weights = wt),
+  RMSE = yardstick::rmse_vec(    truth = test, estimate = claytotal_r, case_weights = wt),
+  MAE  = yardstick::mae_vec(     truth = test, estimate = claytotal_r, case_weights = wt)
+  ),
+  by = areasymbol
+  ]
+  
+
+
+# saveRDS(test_l, "test_l.rds")
+test_l <- readRDS("test_l.rds")
 # test_r2 <- sapply(test_l, function(x) x[[2]])
 test_acc <- data.frame(
   R2   = sapply(test_l, function(x) x$R2),
@@ -841,8 +887,9 @@ test_acc <- data.frame(
   areasymbol = as
   )
 # test_r2 <- data.frame(r2 = unlist(test_l), areasymbol = as)
-test <- inner_join(sapol, test_acc, by = "areasymbol") |>
+test <- inner_join(sapol, test_acc, by = join_by(AREASYMBOL == areasymbol)) |>
   subset(!is.na(R2))
+sso_ov <- test
 test_l <- tidyr::pivot_longer(test, cols = c("R2", "RMSE", "MAE"))
 
 
