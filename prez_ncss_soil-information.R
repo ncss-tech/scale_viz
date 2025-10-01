@@ -687,7 +687,7 @@ ssurgo_le_acc <- ssurgo_mu_acc |>
     oa = sum(comppct_r_max_muacres, na.rm = TRUE) / sum(muacres, na.rm = TRUE)
   ) |>
   ungroup()
-ssurgo_le_acc <- merge(sapol, ssurgo_le_acc, by.x = "LKEY", by.y = "lkey", all.x = TRUE)
+ssurgo_le_acc <- merge(sapol, ssurgo_le_acc, by.x = "lkey", by.y = "lkey", all.x = TRUE)
 
 
 brks <- c(0, 0.5, 0.75, 0.9, 1)
@@ -696,7 +696,7 @@ lbls  <- paste0(brks[-idx], " to ", brks[-1])
 
 ssurgo_le_acc <- ssurgo_le_acc |>
   subset(
-    substr(AREASYMBOL, 1, 2) %in% conus_abb 
+    substr(areasymbol, 1, 2) %in% conus_abb 
     ) |>
   transform(`Overall accuracy` = cut(oa, breaks = brks, labels = lbls, right = FALSE)) |>
   subset(!is.na(`Overall accuracy`)) |>
@@ -791,7 +791,7 @@ ssurgo_h_wi <- ssurgo_le[c("lkey", "areasymbol")] |>
   inner_join(ssurgo_mu[c("mukey", "lkey", "muacres")],  by = "lkey") |>
   inner_join(ssurgo_co[c("cokey", "mukey", "comppct_r")], by = "mukey") |>
   inner_join(ssurgo_h, by = "cokey") |>
-  aqp::hz_segment(intervals = c(0, 10), depthcols = c("hzdept_r", "hzdepb_r"))
+  aqp::hz_segment(intervals = c(0, 200), depthcols = c("hzdept_r", "hzdepb_r"))
 ssurgo_h_wi$id <- row.names(ssurgo_h_wi)
 
 vars <- paste0("claytotal", c("_l", "_r", "_h"))
@@ -803,8 +803,17 @@ library(future.apply)
 
 future::plan(future::multisession, workers = length(future::availableWorkers()) - 2)
 test_wi <- future_apply(ssurgo_h_wi[idx_lrh < 1, vars],  1, samp_p, simplify = FALSE)
+test_wi <- apply(ssurgo_h_wi[1:100, ][idx_lrh[1:100] < 1, vars],  1, samp_p, simplify = FALSE)
 # test    <- future_apply(x3,         1, samp_p, simplify = FALSE)
 plan(sequential)
+
+test <- ssurgo_h_wi[idx_lrh < 1, vars] |> as.data.table()
+test[, .(
+  clay = samp_p(c(claytotal_l, claytotal_r, claytotal_h))
+  ), 
+  by = 1:nrow(test)
+  ]
+
 
 ssurgo_h_samp <- test_wi
 # saveRDS(test_wi, "ssurgo_h_samp-density_hl.rds")
@@ -942,6 +951,7 @@ dev.off()
 
 
 
+
 h_ss <- function(x, var) {
   
   iv <- c("_l", "_r", "_h")
@@ -964,3 +974,36 @@ h_sub <- aqp::hz_segment(ssurgo_h, c(0, 10), depthcols = c("hzdept_r", "hzdepb_r
 
 
 col_idx <- which(gre)
+
+
+# merge datasets ----
+
+sso_d <- sapol |> 
+  merge(sso_n, by.x = "AREASYMBOL", by = "areasymbol", all.x = TRUE) |>
+  merge(st_drop_geometry(sso_mis), by = "AREASYMBOL", all.x = TRUE
+) |>
+  merge(
+    st_drop_geometry(ssurgo_le_acc), by.x = "AREASYMBOL", by.y = "areasymbol", all.x = TRUE
+  ) |>
+  merge(
+    st_drop_geometry(sso_ov), by.x = "AREASYMBOL", by.y = "AREASYMBOL", all.x = TRUE
+  ) |>
+  merge(
+    st_drop_geometry(sso_mla), by.x = "AREASYMBOL", by.y = "areasymbol", all.x = TRUE
+  )
+names(sso_d)[-97] <- sso_d |> st_drop_geometry() |> names() |> tolower() |> make.names(unique = TRUE) |> gsub("\\.", "_", x = _)
+
+idx <- sapply(sso_d, is.factor) |> which()
+sso_d[idx] <- lapply(st_drop_geometry(sso_d[idx]), function(x) as.character(x))
+
+
+nm <- names(sso_d)
+vars <- c("oa", "r2", "rmse", "mae", "n", "pct_co_ch_mis", "n_mla", "pct_mla", "n_12_1p4", "pct_12_1p4", "n_24_5p7", "pct_24_5p7")
+lbls <- c("overall_accuracy", "R2_clay_10cm", "RMSE_clay_10cm", "MAE_clay_10cm",  "NSSH_sample _size", "pct_acres_missing_horizon_data", "num_polygons_lt_MLA", "pct_polygons_lt_MLA", "num_polygons_lt_MLA_12", "pct_polygons_lt_MLA_12", "num_polygons_lt_MLA_24", "pct_polygons_lt_MLA_24")
+idx  <- sapply(vars, function(x) which(nm == x)) |> unlist()
+names(sso_d)[idx] <- lbls 
+
+vars <- c("areasymbol", "areaname", "mlraoffice", "mouagncyresp", "projectscale", "cordate", lbls)
+st_write(sso_d[vars], dsn = "ssurgo_deficiencies_final15.gpkg")
+
+test <- read_sf("D:/geodata/soils/SSURGO/ssurgo_sso_metrics.gpkg")
